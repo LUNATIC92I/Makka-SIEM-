@@ -11,6 +11,7 @@ from typing import Any
 
 from app.connectors.http import SafeHttpClient
 from app.connectors.osint.base import Findings, NetworkInfo, OsintProvider, ProviderResult, RelatedIndicator
+from app.core.errors import ConnectorError
 from app.core.timeutil import parse_timestamp
 
 
@@ -60,10 +61,25 @@ class RdapProvider(OsintProvider):
     async def _lookup(self, ind_type: str, value: str) -> ProviderResult:
         path = "ip" if ind_type in ("ipv4", "ipv6") else "domain"
         url = f"{self.ctx.settings.get('base_url') or self.BASE}/{path}/{value}"
-        data, resp = await SafeHttpClient().get_json(url, headers={"Accept": "application/rdap+json"})
-        if not data:
-            return self._result(ind_type, value, "no_data", reference_url=url, error_message="Aucun enregistrement RDAP")
-        ref = next((lk.get("href") for lk in data.get("links") or [] if lk.get("rel") == "self"), str(resp.url))
+        resp = await SafeHttpClient().request("GET", url, headers={"Accept": "application/rdap+json"})
+        if resp.status_code == 404:
+            try:
+                body = resp.json()
+            except ValueError:
+                body = {}
+            detail = " ".join(str(x) for x in [body.get("title"), *(body.get("description") or [])] if x)
+            return self._result(
+                ind_type, value, "no_data", raw=body or None, reference_url=str(resp.url),
+                error_message=f"Le registre a répondu 404{f' ({detail})' if detail else ''} : absence d'enregistrement "
+                              "ou indisponibilité temporaire du registre — à revérifier.",
+            )
+        if resp.status_code >= 400:
+            raise ConnectorError(f"Requête RDAP refusée (HTTP {resp.status_code})", status_code=resp.status_code)
+        try:
+            data = resp.json()
+        except ValueError as exc:
+            raise ConnectorError("Réponse RDAP invalide") from exc
+        ref = str(resp.url)  # URL actually consulted (after the bootstrap redirect)
         findings = Findings()
         if path == "ip":
             cidrs = [f"{c.get('v4prefix') or c.get('v6prefix')}/{c.get('length')}" for c in data.get("cidr0_cidrs") or []]

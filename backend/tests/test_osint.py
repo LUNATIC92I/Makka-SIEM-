@@ -45,7 +45,16 @@ def test_rdap_keeps_only_organisations(env, mock_http):
     assert r.status == "ok" and r.findings.network.registered_org == "Example Org Ltd"
     assert r.findings.network.cidr == "154.73.112.0/22" and r.findings.network.rir == "AFRINIC"
     assert "Jean Dupont" not in str(r.findings.model_dump())  # no personal data
-    assert r.reference_url.startswith("https://rdap.afrinic.net") and r.raw_sha256 and r.queried_at
+    assert r.reference_url == f"https://rdap.afrinic.net/rdap/ip/{IP}" and r.raw_sha256 and r.queried_at
+
+
+def test_gzip_responses_are_decoded(env, mock_http):
+    import gzip
+    import json as _json
+
+    body = gzip.compress(_json.dumps({"ip": IP, "ports": [22], "hostnames": [], "tags": [], "vulns": [], "cpes": []}).encode())
+    mock_http(lambda req: httpx.Response(200, content=body, headers={"content-encoding": "gzip", "content-type": "application/json"}))
+    assert lookup(InternetDbProvider).findings.services.ports == [22]
 
 
 def test_rdap_redirect_to_internal_is_blocked(env, mock_http):

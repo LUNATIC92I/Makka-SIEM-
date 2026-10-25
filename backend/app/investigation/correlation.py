@@ -20,6 +20,7 @@ from app.core.timeutil import iso, utc_now
 from app.models import EnrichmentResult, Indicator, InvestigationIndicator, SiemEvent
 from app.scoring.engine import EventEvidence, ReputationEvidence, ScoringInput
 
+VERDICT_FR = {"malicious": "malveillant", "suspicious": "suspect", "benign": "bénin", "unknown": "inconnu"}
 CATEGORY_LABELS = {
     "network": "attribution réseau (organisation / ASN)",
     "geolocation": "géolocalisation estimée",
@@ -152,7 +153,7 @@ def correlate(
                 r.source_name, group, reliability, f.reputation.verdict, f.reputation.score,
                 f.reputation.last_reported_at, r.is_synthetic,
             ))
-            out.facts.append(_fact(r, f"{r.source_name} : verdict « {f.reputation.verdict} »"
+            out.facts.append(_fact(r, f"{r.source_name} : verdict « {VERDICT_FR.get(f.reputation.verdict, f.reputation.verdict)} »"
                                       f"{f' ({f.reputation.raw_score})' if f.reputation.raw_score else ''} pour {ind.value}.", "reputation"))
             last = f.reputation.last_reported_at
             if last and now - last > timedelta(days=stale_after_days):
@@ -176,6 +177,8 @@ def correlate(
             temporality = "current" if cert.not_after and cert.not_after > now else "historical"
             out.relations.append(_rel(r, node_kind, node_value, "certificate", label, "certificate_observed", 0.6,
                                       temporality, cert.not_before))
+        if f.resolutions:
+            answered.add("infrastructure")
         if f.services and f.services.ports:
             answered.add("services")
             out.facts.append(_fact(r, f"{r.source_name} a observé les ports {', '.join(map(str, f.services.ports[:15]))} "
@@ -214,7 +217,7 @@ def correlate(
     if enrichable:
         for cat in ("network", "geolocation", "reputation", "infrastructure"):
             if cat not in answered:
-                out.missing.append(f"Aucune donnée de {CATEGORY_LABELS[cat]} obtenue.")
+                out.missing.append(f"Aucune donnée obtenue pour : {CATEGORY_LABELS[cat]}.")
         if not any(r.status == "ok" for r in results):
             out.missing.append("Aucune source OSINT n'a répondu : vérifier la configuration des connecteurs.")
     else:

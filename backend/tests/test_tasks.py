@@ -84,7 +84,7 @@ def test_poll_resumes_from_checkpoint_after_failure(db, mock_http):
 
     mock_http(handler)
     row = ConnectorConfig(kind="siem", provider="generic_rest", name="poll1", enabled=True,
-                          settings={"url": "https://api.example.org/events", "auth_type": "none"}, poll_interval_seconds=60)
+                          settings={"url": "https://api.example.org/events", "auth_type": "none", "initial_lookback_minutes": 5256000}, poll_interval_seconds=60)
     db.add(row)
     db.commit()
     result = asyncio.run(poll_connector(db, row.id))

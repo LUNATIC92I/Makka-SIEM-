@@ -79,8 +79,11 @@ class SafeHttpClient:
                             body.extend(chunk)
                             if len(body) > MAX_RESPONSE_BYTES:
                                 raise ConnectorError("Réponse trop volumineuse")
+                        # aiter_bytes() already decoded the body: drop encoding headers before rebuilding.
+                        headers = [(k, v) for k, v in resp.headers.multi_items()
+                                   if k.lower() not in ("content-encoding", "content-length", "transfer-encoding")]
                         response = httpx.Response(
-                            resp.status_code, headers=resp.headers, content=bytes(body), request=resp.request
+                            resp.status_code, headers=headers, content=bytes(body), request=resp.request
                         )
                 except httpx.TimeoutException as exc:
                     raise ConnectorError("Délai d'attente dépassé", retryable=True) from exc

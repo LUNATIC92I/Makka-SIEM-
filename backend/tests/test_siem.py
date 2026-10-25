@@ -168,7 +168,7 @@ def test_generic_rest_errors(env, mock_http, monkeypatch):
         return httpx.Response(200, json={"data": {"items": [{"id": "g1", "timestamp": "2026-10-25T22:14:35Z", "src_ip": "8.8.8.8"}]}})
 
     mock_http(handler)
-    mk = lambda path: GenericRestConnector(ConnectorContext("g", {"url": f"https://api.example.org{path}", "items_path": "data.items"}, {"token": "t"}))  # noqa: E731
+    mk = lambda path: GenericRestConnector(ConnectorContext("g", {"url": f"https://api.example.org{path}", "items_path": "data.items", "initial_lookback_minutes": 5256000}, {"token": "t"}))  # noqa: E731
     with pytest.raises(RateLimited):
         run(mk("/rate").fetch(None))
     with pytest.raises(AuthExpired):
