@@ -12,7 +12,7 @@ import re
 import unicodedata
 from typing import Any
 
-_CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f​-‏‪-‮⁦-⁩]")
+_CONTROL = re.compile("[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f\\u200b-\\u200f\\u202a-\\u202e\\u2066-\\u2069]")
 
 INJECTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("ignore_instructions", re.compile(r"(?i)\b(ignore|disregard|forget|oublie[zr]?|ignore[zr]?)\b.{0,40}\b(previous|prior|above|all|précédentes?|toutes?)\b.{0,30}\b(instructions?|rules?|consignes?|règles?)")),

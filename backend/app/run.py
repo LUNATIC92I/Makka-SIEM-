@@ -14,6 +14,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--data-dir", help="Dossier de données")
     parser.add_argument("--static-dir", help="Dossier du frontend compilé")
     parser.add_argument("--migrate-only", action="store_true", help="Appliquer les migrations puis quitter")
+    parser.add_argument("--open-browser", action="store_true", help="Ouvrir l'interface dans le navigateur par défaut")
     args = parser.parse_args(argv)
     for key, value in (("HOST", args.host), ("PORT", args.port), ("DATA_DIR", args.data_dir), ("STATIC_DIR", args.static_dir)):
         if value is not None:
@@ -38,6 +39,25 @@ def main(argv: list[str] | None = None) -> int:
     import uvicorn
 
     from app.main import app
+
+    if args.open_browser:
+        import threading
+        import time
+        import urllib.request
+        import webbrowser
+
+        url = f"http://{settings.host}:{settings.port}/"
+
+        def _open() -> None:
+            for _ in range(60):
+                try:
+                    urllib.request.urlopen(url + "api/v1/health", timeout=1)  # noqa: S310  # nosec B310 - fixed local http URL
+                    webbrowser.open(url)
+                    return
+                except OSError:
+                    time.sleep(0.5)
+
+        threading.Thread(target=_open, daemon=True).start()
 
     uvicorn.run(app, host=settings.host, port=settings.port, log_config=None, access_log=False, proxy_headers=False)
     return 0

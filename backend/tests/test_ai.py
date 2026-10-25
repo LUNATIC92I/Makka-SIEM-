@@ -135,3 +135,60 @@ def test_openai_compatible_local_endpoint(monkeypatch):
     system, user = captured["body"]["messages"]
     assert system["role"] == "system" and "DONNÉES NON FIABLES" in system["content"]
     assert "<investigation_data" in user["content"] and "tools" not in captured["body"]
+
+
+class _FakeMessages:
+    def __init__(self, stop_reason, text):
+        self.calls = []
+        self.stop_reason, self.text = stop_reason, text
+
+    async def create(self, **kwargs):
+        self.calls.append(kwargs)
+        block = type("B", (), {"type": "text", "text": self.text})()
+        return type("R", (), {"stop_reason": self.stop_reason, "content": [block]})()
+
+
+def _fake_anthropic(monkeypatch, stop_reason, text):
+    import anthropic
+
+    messages = _FakeMessages(stop_reason, text)
+    client = type("C", (), {"beta": type("Beta", (), {"messages": messages})()})()
+    monkeypatch.setattr(anthropic, "AsyncAnthropic", lambda **kw: client)
+    return messages
+
+
+def test_anthropic_provider_request_shape(monkeypatch):
+    from app.ai.providers import AnthropicProvider
+
+    msgs = _fake_anthropic(monkeypatch, "end_turn", json.dumps(deterministic_output()))
+    provider = AnthropicProvider(AIConfig(provider="anthropic", api_key="sk-test"))
+    raw = asyncio.run(provider.analyze(PACKAGE))
+    assert validate_output(raw, PACKAGE)[0] is not None
+    call = msgs.calls[0]
+    assert call["model"] == "claude-opus-5-5" and call["thinking"] == {"type": "adaptive"}
+    assert call["output_config"]["format"]["type"] == "json_schema" and "tools" not in call
+    assert call["fallbacks"] == "default" and "server-side-fallback-2026-07-01" in call["betas"]
+    assert "DONNÉES NON FIABLES" in call["system"]
+
+
+def test_anthropic_refusal_and_missing_key(monkeypatch):
+    from app.ai.providers import AnthropicProvider
+    from app.core.errors import ConnectorError
+
+    _fake_anthropic(monkeypatch, "refusal", "")
+    with pytest.raises(ConnectorError, match="refus"):
+        asyncio.run(AnthropicProvider(AIConfig(provider="anthropic", api_key="k")).analyze(PACKAGE))
+    with pytest.raises(ConnectorError, match="Clé API"):
+        asyncio.run(AnthropicProvider(AIConfig(provider="anthropic")).analyze(PACKAGE))
+
+
+def test_external_ai_blocked_without_policy(client, admin):
+    from tests.conftest import drain
+
+    client.post("/api/v1/ingest/demo", headers=admin)
+    drain()
+    client.post("/api/v1/connectors", headers=admin, json={"kind": "ai", "provider": "anthropic", "name": "claude",
+                                                           "enabled": True, "settings": {}, "secrets": {"api_key": "k"}})
+    inv = client.get("/api/v1/investigations", headers=admin).json()["items"][0]
+    r = client.post(f"/api/v1/investigations/{inv['id']}/ai-analysis", headers=admin, json={}).json()
+    assert r["status"] == "disabled" and r["data_sent_externally"] is False and "politique" in r["error_message"]

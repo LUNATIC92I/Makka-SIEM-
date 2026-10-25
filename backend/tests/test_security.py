@@ -215,3 +215,11 @@ def test_active_checks_scope(monkeypatch, env):
         authorize_target("127.0.0.1", [6379])  # port not allowed
     assert authorize_target("127.0.0.1", [22])
     asyncio.run(asyncio.sleep(0))
+
+
+def test_env_file_in_data_dir_is_loaded(env):
+    from app.core.config import get_settings
+
+    (env / ".env").write_text("MAKKADI_APP_NAME=Marque-Test\n")
+    get_settings.cache_clear()
+    assert get_settings().app_name == "Marque-Test"

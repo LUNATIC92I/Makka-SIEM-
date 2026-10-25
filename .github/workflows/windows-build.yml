@@ -1,0 +1,26 @@
+name: Windows build (.exe)
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Build MAKKADi (tests + PyInstaller + Electron)
+        shell: pwsh
+        run: ./scripts/build_windows.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: makkadi-windows
+          path: |
+            desktop/dist/*.exe
+            backend/dist/makkadi-backend/**
+          if-no-files-found: error

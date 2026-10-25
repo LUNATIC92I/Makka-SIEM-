@@ -133,4 +133,9 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    """Settings from environment, ``./.env`` and ``<data_dir>/.env`` (environment wins)."""
+    base = Settings()
+    data_env = base.data_dir / ".env"
+    if data_env.is_file():
+        return Settings(_env_file=(data_env, ".env"))  # type: ignore[call-arg]
+    return base
