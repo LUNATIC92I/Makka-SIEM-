@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
   push:
     tags: ["v*"]
+    branches: ["main", "ccr-e6437631-btar9d"]
 permissions:
   contents: read
 jobs:
