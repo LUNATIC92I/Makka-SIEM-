@@ -106,7 +106,7 @@ def effective_independent_sources(
         overlap_with = [g for g in counted if [g, group] in overlapping or [group, g] in overlapping]
         if overlap_with:
             total += rel * discount
-            notes.append(f"'{group}' partage des données avec '{overlap_with[0]}' : poids réduit ×{discount}.")
+            notes.append(f"'{group}' partage des données avec '{overlap_with[0]}' : poids réduit (coefficient {discount}).")
         else:
             total += rel
         counted.append(group)
@@ -182,9 +182,9 @@ def compute(inp: ScoringInput, cfg: dict[str, Any], assets: dict[str, Any] | Non
                     crit_label, matched = level, f"{target} ~ {pattern}"
     if crit_label is None:
         crit_label = assets.get("default_criticality", "medium")
-        crit_rationale = f"Aucun actif référencé : criticité par défaut « {crit_label} »."
+        crit_rationale = f"Aucun actif référencé : criticité par défaut {crit_label}."
     else:
-        crit_rationale = f"Cible identifiée dans l'inventaire ({matched}) : criticité « {crit_label} »."
+        crit_rationale = f"Cible identifiée dans l'inventaire ({matched}) : criticité {crit_label}."
     factors.append(Factor("target_criticality", "Criticité de la cible", CRITICALITY_VALUE.get(crit_label, 0.5),
                           weights["target_criticality"], crit_rationale))
 
@@ -238,7 +238,7 @@ def compute(inp: ScoringInput, cfg: dict[str, Any], assets: dict[str, Any] | Non
     confidence_factors = [
         {"label": "Corroboration indépendante", "value": round(corroboration, 3), "weight": 0.45,
          "rationale": f"{len(inp.reputation)} résultat(s) de réputation issus de {len(groups_rel)} groupe(s) d'amont "
-                      f"→ {eff:.2f} source(s) indépendante(s) effective(s) (2 = maximum)."},
+                      f"soit {eff:.2f} source(s) indépendante(s) effective(s) (2 = maximum)."},
         {"label": "Couverture des dimensions", "value": round(coverage, 3), "weight": 0.35,
          "rationale": f"Dimensions documentées : {', '.join(sorted(inp.categories_answered & expected)) or 'aucune'} "
                       f"sur {', '.join(sorted(expected))}."},
@@ -264,7 +264,7 @@ def compute(inp: ScoringInput, cfg: dict[str, Any], assets: dict[str, Any] | Non
         "notes": notes,
         "effective_independent_sources": round(eff, 2),
         "summary": (
-            f"Risque {risk_level} ({risk if risk is not None else '—'}/100) avec une confiance {confidence_level} "
+            f"Risque {risk_level} ({risk if risk is not None else 'N/D'}/100) avec une confiance {confidence_level} "
             f"({conf}/100). Le risque estime le caractère potentiellement malveillant ; la confiance mesure la "
             "solidité des éléments disponibles."
         ),

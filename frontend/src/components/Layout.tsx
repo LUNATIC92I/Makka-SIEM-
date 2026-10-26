@@ -1,4 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
+import GlitchText from "../fx/GlitchText";
+import HexTicker from "../fx/HexTicker";
+import { useFx } from "../fx/useFx";
 import { useAuth } from "../hooks/useAuth";
 
 const NAV: { to: string; label: string; icon: string; perm?: string }[] = [
@@ -18,37 +21,42 @@ export const Icon = ({ d, className = "h-4 w-4" }: { d: string; className?: stri
 
 export default function Layout() {
   const { user, meta, logout, can } = useAuth();
+  const { enabled, toggle } = useFx();
   return (
     <div className="flex h-full">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-ink-700 bg-ink-900">
+      <aside className="flex w-60 shrink-0 flex-col border-r border-neon-500/20 bg-ink-900/90 backdrop-blur-sm">
         <div className="flex items-center gap-2 px-4 py-4">
           <img src="./favicon.svg" alt="" className="h-8 w-8" />
           <div>
-            <div className="text-base font-bold tracking-wide text-slate-50">{meta?.app_name ?? "MAKKADi"}</div>
-            <div className="text-[10px] uppercase tracking-widest text-cyanx-400">OSINT Intelligence</div>
+            <GlitchText as="div" className="text-base font-bold tracking-wide text-slate-50">{meta?.app_name ?? "MAKKADi"}</GlitchText>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-neon-400">OSINT Intelligence<span className="cursor-blink">_</span></div>
           </div>
         </div>
         {meta?.demo_mode && (
           <div className="mx-3 mb-2 rounded-md border border-amber-600/50 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-300">
-            Mode démonstration actif : les sources synthétiques sont signalées « DONNÉE DE DÉMONSTRATION ».
+            Mode démonstration actif : les sources synthétiques sont signalées DONNÉE DE DÉMONSTRATION.
           </div>
         )}
         <nav className="flex-1 space-y-0.5 px-2">
           {NAV.filter((n) => !n.perm || can(n.perm)).map((n) => (
             <NavLink key={n.to} to={n.to} end={n.to === "/"}
-              className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${isActive ? "bg-electric-500/15 text-cyanx-300" : "text-slate-400 hover:bg-ink-800 hover:text-slate-100"}`}>
+              className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${isActive ? "border-l-2 border-neon-400 bg-neon-500/10 text-neon-300 text-glow" : "text-slate-400 hover:bg-ink-800 hover:text-neon-300"}`}>
               <Icon d={n.icon} />{n.label}
             </NavLink>
           ))}
         </nav>
         <div className="border-t border-ink-700 p-3 text-xs">
           <div className="text-slate-300">{user?.display_name || user?.username}</div>
-          <div className="mb-2 text-slate-500">{user?.role} · v{meta?.version}</div>
+          <div className="mb-2 text-slate-500">{user?.role}, version {meta?.version}</div>
+          <button className="btn-ghost mb-2 w-full justify-center font-mono text-xs" onClick={toggle} aria-pressed={enabled}>
+            Effets visuels : {enabled ? "activés" : "désactivés"}
+          </button>
           <button className="btn-ghost w-full justify-center" onClick={logout}>Se déconnecter</button>
         </div>
       </aside>
       <main className="min-w-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1600px] p-6"><Outlet /></div>
+        <HexTicker />
+        <div className="reveal mx-auto max-w-[1600px] p-6"><Outlet /></div>
       </main>
     </div>
   );

@@ -1,4 +1,4 @@
-"""Shodan InternetDB — passive view of exposed ports/services (no scan performed by MAKKADi)."""
+"""Shodan InternetDB, passive view of exposed ports/services (no scan performed by MAKKADi)."""
 
 from __future__ import annotations
 

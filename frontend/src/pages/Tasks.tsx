@@ -1,3 +1,4 @@
+import GlitchText from "../fx/GlitchText";
 import { Card, Empty, ErrorBox, Pill, Spinner } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../hooks/useAuth";
@@ -13,7 +14,7 @@ export default function TasksPage() {
   if (loading && !data) return <Spinner />;
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-slate-50">File de tâches</h1>
+      <GlitchText className="text-2xl font-semibold text-slate-50">File de tâches</GlitchText>
       <p className="text-sm text-slate-400">Collecte SIEM, enrichissements et purges. Les tâches interrompues sont reprises au redémarrage ; les échecs sont relancés avec temporisation exponentielle.</p>
       <div className="flex flex-wrap gap-2">{Object.entries(data?.counts ?? {}).map(([k, v]) => <Pill key={k} className={TONE[k] ?? "border-ink-500"}>{k} : {v}</Pill>)}</div>
       <ErrorBox error={error} />

@@ -39,12 +39,12 @@ export default function GeoMap({ points, height = 520, tiles = false }: { points
       const html = `<div style="font-size:12px;line-height:1.45">
         <div style="font-family:monospace;color:#67e8f9">${escapeHtml(p.indicator)}</div>
         ${p.is_synthetic ? '<div style="color:#fbbf24;font-weight:600">DONNÉE DE DÉMONSTRATION</div>' : ""}
-        <div><b>Estimation :</b> ${escapeHtml([p.city, p.region, p.country].filter(Boolean).join(", ") || "—")}</div>
-        <div><b>Source :</b> ${escapeHtml(p.source)} — ${escapeHtml(fmtDate(p.queried_at))}</div>
+        <div><b>Estimation :</b> ${escapeHtml([p.city, p.region, p.country].filter(Boolean).join(", ") || "N/D")}</div>
+        <div><b>Source :</b> ${escapeHtml(p.source)}, ${escapeHtml(fmtDate(p.queried_at))}</div>
         ${p.accuracy_radius_km ? `<div><b>Rayon de précision déclaré :</b> ${p.accuracy_radius_km} km</div>` : ""}
         <div><b>Investigation :</b> ${escapeHtml(p.investigation_reference ?? "")}</div>
-        <div><b>Cibles :</b> ${escapeHtml(p.targets.join(", ") || "—")}</div>
-        <div><b>Événements :</b> ${escapeHtml(p.event_times.map((t) => fmtDate(t)).join(" · "))}</div>
+        <div><b>Cibles :</b> ${escapeHtml(p.targets.join(", ") || "N/D")}</div>
+        <div><b>Événements :</b> ${escapeHtml(p.event_times.map((t) => fmtDate(t)).join(", "))}</div>
         <div style="color:#94a3b8;margin-top:4px">Position estimée, pas une position GPS.</div></div>`;
       L.circleMarker([p.latitude, p.longitude], { radius: 6, color, weight: 2, fillColor: color, fillOpacity: 0.5 }).bindPopup(html).addTo(map);
       bounds.push([p.latitude, p.longitude]);
@@ -56,7 +56,7 @@ export default function GeoMap({ points, height = 520, tiles = false }: { points
   return (
     <div>
       <div className="mb-2 rounded-lg border border-amber-600/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-200" role="note">
-        ⚠ Emplacements <strong>estimés</strong> à partir de bases de géolocalisation IP. Ils n'identifient ni une personne ni une position
+        Emplacements <strong>estimés</strong> à partir de bases de géolocalisation IP. Ils n'identifient ni une personne ni une position
         physique exacte. VPN, proxys, réseaux mobiles, relais, hébergements cloud et infrastructures compromises peuvent fausser
         l'interprétation. Les cercles pointillés représentent le rayon de précision déclaré par la source.
       </div>

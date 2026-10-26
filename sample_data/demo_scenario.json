@@ -1,6 +1,6 @@
 {
   "synthetic": true,
-  "description": "DONNÉES DE DÉMONSTRATION — événements SIEM synthétiques. L'adresse 154.73.112.25 est utilisée comme indicateur de démonstration uniquement : aucun résultat de réputation, de localisation ou d'organisation n'est prérempli.",
+  "description": "DONNÉES DE DÉMONSTRATION, événements SIEM synthétiques. L'adresse 154.73.112.25 est utilisée comme indicateur de démonstration uniquement : aucun résultat de réputation, de localisation ou d'organisation n'est prérempli.",
   "source_system": "demo-siem",
   "events": [
     {

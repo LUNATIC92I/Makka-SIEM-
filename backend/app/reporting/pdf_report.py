@@ -66,13 +66,14 @@ def _register_fonts() -> None:
             return
 
 
-_TRANSLIT = {"→": "->", "≠": "!=", "≥": ">=", "≤": "<=", "✓": "v", "•": "-", "…": "...", "’": "'", "—": "-", "–": "-"}
+_TRANSLIT = {"\u2192": " vers ", "\u2260": " différent de ", "\u2265": ">=", "\u2264": "<=", "\u2713": "", "\u2022": "",
+             "\u2026": "...", "\u2019": "'", "\u2014": ",", "\u2013": ","}
 
 
 def _t(value: Any, max_len: int = 1500) -> str:
-    text = "—" if value is None or value == "" else str(value)
+    text = "N/D" if value is None or value == "" else str(value)
     if len(text) > max_len:
-        text = text[:max_len] + "…"
+        text = text[:max_len] + "..."
     if not _UNICODE:
         for k, v in _TRANSLIT.items():
             text = text.replace(k, v)
@@ -131,7 +132,7 @@ def _graph(relations: list[dict[str, Any]], width: float = 17 * cm, height: floa
         kind = n.split(":", 1)[0]
         d.add(Circle(x, y, 4, fillColor=palette.get(kind, GREY), strokeColor=colors.white, strokeWidth=0.5))
         label = n.split(":", 1)[1] if ":" in n else n
-        label = (label[:28] + "…") if len(label) > 29 else label
+        label = (label[:28] + "...") if len(label) > 29 else label
         if not _UNICODE:
             label = label.encode("latin-1", "replace").decode("latin-1")
         anchor = "start" if x >= cx else "end"
@@ -152,12 +153,12 @@ def render_pdf(data: dict[str, Any]) -> bytes:
         canvas.saveState()
         canvas.setFont(_FONT, 7)
         canvas.setFillColor(GREY)
-        canvas.drawString(1.5 * cm, 1 * cm, f"{app} — {inv['reference']} — généré le {data['generated_at']} (UTC)")
+        canvas.drawString(1.5 * cm, 1 * cm, f"{app}, {inv['reference']}, généré le {data['generated_at']} (UTC)")
         canvas.drawRightString(A4[0] - 1.5 * cm, 1 * cm, f"Page {doc.page}")
         if synthetic:
             canvas.setFillColor(colors.HexColor("#b45309"))
             canvas.setFont(_FONT_BOLD, 8)
-            canvas.drawCentredString(A4[0] / 2, A4[1] - 1 * cm, "DONNÉES DE DÉMONSTRATION — SANS VALEUR OPÉRATIONNELLE"
+            canvas.drawCentredString(A4[0] / 2, A4[1] - 1 * cm, "DONNÉES DE DÉMONSTRATION, SANS VALEUR OPÉRATIONNELLE"
                                      if _UNICODE else "DONNEES DE DEMONSTRATION - SANS VALEUR OPERATIONNELLE")
         canvas.restoreState()
 
@@ -176,7 +177,7 @@ def render_pdf(data: dict[str, Any]) -> bytes:
     risk = data["risk_assessment"]
     corr = data["correlation"]
 
-    story.append(Paragraph(_t(f"{app} — {kind_label}"), st.h1))
+    story.append(Paragraph(_t(f"{app}, {kind_label}"), st.h1))
     if synthetic:
         story.append(Paragraph(_t("Ce rapport contient des DONNÉES DE DÉMONSTRATION synthétiques."), st.warn))
     section(1, "Identification de l'investigation")
@@ -190,16 +191,16 @@ def render_pdf(data: dict[str, Any]) -> bytes:
     story.append(Paragraph(_t(risk.get("summary")), st.body))
 
     section(3, "Contexte de l'alerte", "observed")
-    rows = [["Source / ID d'origine", "Horodatage (UTC)", "Événement", "Sévérité", "Source → Cible", "Tentatives"]]
+    rows = [["Source / ID d'origine", "Horodatage (UTC)", "Événement", "Sévérité", "Source et cible", "Tentatives"]]
     for e in data["alert_context"]["events"]:
         rows.append([f"{e['source_system']} / {e['original_id']}", e["event_time"], f"{e['title']} [{e['event_type']}]",
-                     f"{e['severity']} ({e['severity_raw']})", f"{e['src_ip']} → {e['hostname'] or e['dst_ip']}"
+                     f"{e['severity']} ({e['severity_raw']})", f"{e['src_ip']} vers {e['hostname'] or e['dst_ip']}"
                      + (f":{e['dst_port']}/{e['protocol']}" if e["dst_port"] else ""), e["attempt_count"]])
     story.append(_table(rows, [3.6 * cm, 3 * cm, 4 * cm, 1.8 * cm, 3.6 * cm, 2 * cm], st))
 
     section(4, "Indicateurs", "computed")
     story.append(_table([["Type", "Valeur", "Rôle", "Portée"]] + [
-        [i["type"], i["value"], i["role"], f"{i['scope']} — {i['note'] or ''}"] for i in data["indicators"]],
+        [i["type"], i["value"], i["role"], f"{i['scope']}, {i['note'] or ''}"] for i in data["indicators"]],
         [1.6 * cm, 5.5 * cm, 2.2 * cm, 8.7 * cm], st))
 
     section(5, "Résultats OSINT", "third_party")
@@ -210,12 +211,12 @@ def render_pdf(data: dict[str, Any]) -> bytes:
         [1.3 * cm, 2.6 * cm, 3 * cm, 1.7 * cm, 3 * cm, 2.6 * cm, 3.8 * cm], st))
     if data["report_kind"] == "technical":
         for f in (corr.get("facts") or [])[:60]:
-            story.append(Paragraph(_t(f"• {f['statement']} [{', '.join(f.get('evidence_ids', []))}]"), st.small))
+            story.append(Paragraph(_t(f"{f['statement']} [{', '.join(f.get('evidence_ids', []))}]"), st.small))
 
     section(6, "Chronologie", "computed")
     tl = data["timeline"] if data["report_kind"] == "technical" else [t for t in data["timeline"] if t["kind"] != "osint_query"]
     story.append(_table([["Horodatage (UTC)", "Type", "Provenance", "Description"]] + [
-        [t["ts"], t["kind"], PROVENANCE_LABEL.get(t["provenance"], t["provenance"]), f"{t['label']} — {t['detail']}"] for t in tl[:150]],
+        [t["ts"], t["kind"], PROVENANCE_LABEL.get(t["provenance"], t["provenance"]), f"{t['label']}, {t['detail']}"] for t in tl[:150]],
         [3.2 * cm, 2.6 * cm, 4 * cm, 8.2 * cm], st))
 
     section(7, "Graphe des relations", "third_party")
@@ -239,9 +240,9 @@ def render_pdf(data: dict[str, Any]) -> bytes:
         + [[p["label"], "", "", f"{p['points']} points"] for p in risk.get("confidence_penalties", [])],
         [4 * cm, 1.6 * cm, 1.3 * cm, 11.1 * cm], st))
     for n in risk.get("notes", []):
-        story.append(Paragraph(_t(f"• {n}"), st.small))
+        story.append(Paragraph(_t(f"{n}"), st.small))
     for c in corr.get("contradictions", []):
-        story.append(Paragraph(_t(f"Contradiction — {c['indicator']} ({c['dimension']}) : {c['description']}"), st.small))
+        story.append(Paragraph(_t(f"Contradiction, {c['indicator']} ({c['dimension']}) : {c['description']}"), st.small))
 
     section(10, "Analyse assistée par IA", "ai_generated")
     story.append(Paragraph(_t(f"Fournisseur : {ai.get('provider')} / modèle : {ai.get('model')} / statut : {ai.get('status')} / "
@@ -252,39 +253,39 @@ def render_pdf(data: dict[str, Any]) -> bytes:
         if out.get(key):
             story.append(Paragraph(_t(title), st.body))
             for item in out[key][:40]:
-                story.append(Paragraph(_t(f"• {item['statement']} [{', '.join(item.get('evidence_ids', []))}]"), st.small))
+                story.append(Paragraph(_t(f"{item['statement']} [{', '.join(item.get('evidence_ids', []))}]"), st.small))
     if out.get("mitre_attack"):
         story.append(Paragraph(_t("Techniques MITRE ATT&CK (hypothèses)"), st.body))
         for m in out["mitre_attack"]:
-            story.append(Paragraph(_t(f"• {m['technique_id']} {m['name']} — {m['justification']}"), st.small))
+            story.append(Paragraph(_t(f"{m['technique_id']} {m['name']}, {m['justification']}"), st.small))
     if out.get("threat_actor_attribution"):
         for a in out["threat_actor_attribution"]:
             story.append(Paragraph(_t(f"Attribution (hypothèse, confiance {a['confidence']}) : {a['actor']} "
-                                      f"[{', '.join(a['evidence_ids'])}] — alternatives : {', '.join(a['alternatives'])}"), st.small))
+                                      f"[{', '.join(a['evidence_ids'])}], alternatives : {', '.join(a['alternatives'])}"), st.small))
     else:
         story.append(Paragraph(_t("Aucune attribution à un acteur de menace : éléments insuffisants."), st.small))
 
     section(11, "Hypothèses alternatives, éléments manquants et limites")
     for item in out.get("alternative_hypotheses", []):
-        story.append(Paragraph(_t(f"• Alternative : {item['statement']} — {item['rationale']}"), st.small))
+        story.append(Paragraph(_t(f"Alternative : {item['statement']}, {item['rationale']}"), st.small))
     for m in (out.get("missing_information") or corr.get("missing") or []):
-        story.append(Paragraph(_t(f"• Manquant : {m}"), st.small))
+        story.append(Paragraph(_t(f"Manquant : {m}"), st.small))
     for lim in data["limitations"] + list(out.get("limitations", [])):
-        story.append(Paragraph(_t(f"• Limite : {lim}"), st.small))
+        story.append(Paragraph(_t(f"Limite : {lim}"), st.small))
 
     section(12, "Recommandations (soumises à validation humaine)", "ai_generated")
     for a in out.get("recommended_actions", []):
-        story.append(Paragraph(_t(f"• [{a['priority']}] {a['action']}"), st.body))
+        story.append(Paragraph(_t(f"[{a['priority']}] {a['action']}"), st.body))
     if data["analyst_decisions"]:
         story.append(Paragraph(_t("Décisions de l'analyste"), st.body))
         for n in data["analyst_decisions"]:
-            story.append(Paragraph(_t(f"• {n['ts']} — {n['author']} ({n['kind']}) : {n['content']}"), st.small))
+            story.append(Paragraph(_t(f"{n['ts']}, {n['author']} ({n['kind']}) : {n['content']}"), st.small))
 
     section(13, "Références des sources", "third_party")
     for r in items:
         if r["status"] == "ok":
-            story.append(Paragraph(_t(f"{r['evidence_id']} — {r['source']} — {r['reference_url'] or 'référence non fournie'} "
-                                      f"— consulté le {r['queried_at']} — sha256 brut : {r['raw_sha256'] or '—'}"), st.small))
+            story.append(Paragraph(_t(f"{r['evidence_id']}, {r['source']}, {r['reference_url'] or 'référence non fournie'} "
+                                      f", consulté le {r['queried_at']}, sha256 brut : {r['raw_sha256'] or 'N/D'}"), st.small))
 
     section(14, "Horodatage et intégrité")
     story.append(Paragraph(_t(f"Rapport généré le {data['generated_at']} (UTC) par {data['generated_by']} avec "

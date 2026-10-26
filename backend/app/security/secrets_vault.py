@@ -10,7 +10,7 @@ from cryptography.fernet import Fernet, InvalidToken
 from app.core.config import get_settings
 from app.security.keys import master_key
 
-SECRET_MASK = "••••••••"
+SECRET_MASK = "********"
 
 
 def _fernet() -> Fernet:

@@ -1,3 +1,4 @@
+import GlitchText from "../fx/GlitchText";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, Empty, ErrorBox, Mono, Pill, ResultStatusPill, Spinner } from "../components/ui";
@@ -20,9 +21,9 @@ export default function ThreatIntelPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-slate-50">Threat Intelligence</h1>
+      <GlitchText className="text-2xl font-semibold text-slate-50">Threat Intelligence</GlitchText>
       <div className="grid gap-4 xl:grid-cols-[1fr_420px]">
-        <Card title={`Indicateurs connus (${data?.total ?? "…"})`} actions={
+        <Card title={`Indicateurs connus (${data?.total ?? "..."})`} actions={
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); setApplied({ q, type }); }}>
             <input className="input w-48" placeholder="Rechercher" value={q} onChange={(e) => setQ(e.target.value)} />
             <select className="input w-28" value={type} onChange={(e) => setType(e.target.value)}><option value="">Tous</option>{["ipv4", "ipv6", "domain", "url", "md5", "sha1", "sha256"].map((t) => <option key={t}>{t}</option>)}</select>
@@ -36,7 +37,7 @@ export default function ThreatIntelPage() {
                   <td><Pill className="border-ink-500 text-slate-400">{i.type}</Pill></td>
                   <td className="mono max-w-[320px] truncate text-cyanx-300">{i.value}{i.has_synthetic && <span className="ml-1 text-[10px] text-amber-300">DÉMO</span>}</td>
                   <td className={i.scope === "public" ? "text-emerald-300" : "text-amber-300"}>{i.scope}</td>
-                  <td className="text-xs">{Object.entries(i.verdicts).map(([v, n]) => <span key={v} className={`mr-2 ${verdictTone(v)}`}>{VERDICT_LABELS[v] ?? v} ×{n}</span>)}{!Object.keys(i.verdicts).length && <span className="text-slate-500">—</span>}</td>
+                  <td className="text-xs">{Object.entries(i.verdicts).map(([v, n]) => <span key={v} className={`mr-2 ${verdictTone(v)}`}>{VERDICT_LABELS[v] ?? v} : {n}</span>)}{!Object.keys(i.verdicts).length && <span className="text-slate-500">N/D</span>}</td>
                   <td>{i.investigations}</td><td className="mono text-xs text-slate-400">{fmtDate(i.last_seen)}</td>
                 </tr>
               ))}</tbody>
@@ -53,7 +54,7 @@ export default function ThreatIntelPage() {
                 <ul className="max-h-[480px] space-y-2 overflow-auto">{detail.data.history.map((r) => (
                   <li key={r.id} className="rounded border border-ink-700 p-2">
                     <div className="flex items-center gap-2"><span className="text-slate-200">{r.source_display}</span><ResultStatusPill status={r.status} /></div>
-                    <div className="text-xs text-slate-500">consulté {fmtDate(r.queried_at)} · donnée du {fmtDate(r.data_updated_at)} · passe {r.run_number}{r.superseded_at ? " (remplacée)" : ""}</div>
+                    <div className="text-xs text-slate-500">consulté {fmtDate(r.queried_at)}, donnée du {fmtDate(r.data_updated_at)}, passe {r.run_number}{r.superseded_at ? " (remplacée)" : ""}</div>
                     {r.findings.reputation && <div className={`text-xs ${verdictTone(r.findings.reputation.verdict)}`}>{VERDICT_LABELS[r.findings.reputation.verdict]} {r.findings.reputation.raw_score}</div>}
                   </li>
                 ))}</ul>
@@ -62,7 +63,7 @@ export default function ThreatIntelPage() {
           </Card>
           <Card title="Sources de renseignement">
             <ul className="space-y-1 text-xs">{(sources ?? []).filter((s) => s.category).map((s) => (
-              <li key={s.name} className="flex justify-between gap-2"><span className="text-slate-300">{s.display_name}</span><span className="text-slate-500">{s.category} · fiab. {s.reliability} · {s.enabled ? s.state : "désactivée"}</span></li>
+              <li key={s.name} className="flex justify-between gap-2"><span className="text-slate-300">{s.display_name}</span><span className="text-slate-500">{s.category}, fiab. {s.reliability}, {s.enabled ? s.state : "désactivée"}</span></li>
             ))}</ul>
           </Card>
         </div>

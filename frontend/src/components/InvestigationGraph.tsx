@@ -27,7 +27,7 @@ export default function InvestigationGraph({ relations, height = 520 }: { relati
     relations.forEach((r) => {
       [[r.from_kind, r.from_value], [r.to_kind, r.to_value]].forEach(([k, v]) => {
         const id = `${k}:${v}`;
-        if (!nodes.has(id)) nodes.set(id, { id, kind: k, label: v.length > 34 ? v.slice(0, 33) + "…" : v });
+        if (!nodes.has(id)) nodes.set(id, { id, kind: k, label: v.length > 34 ? v.slice(0, 33) + "..." : v });
       });
     });
     cy.current = cytoscape({

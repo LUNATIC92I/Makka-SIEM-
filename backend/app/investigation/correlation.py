@@ -1,7 +1,7 @@
 """Cross-source correlation.
 
 Produces, from stored enrichment results:
-* qualified relations (graph edges) — observations, never proofs of causality;
+* qualified relations (graph edges), observations, never proofs of causality;
 * attributed facts ("source S declares X"), agreements, contradictions,
   stale data and missing information;
 * the inputs of the scoring engine.
@@ -125,7 +125,7 @@ def correlate(
             if category in ("reputation", "threat_intel"):
                 ti_ok += 1 if category == "threat_intel" else 0
                 out.facts.append(_fact(r, f"{r.source_name} : aucune donnée pour {ind.value} "
-                                          "(absence de signalement ≠ innocuité).", "absence"))
+                                          "(l'absence de signalement n'est pas une preuve d'innocuité).", "absence"))
             continue
         synthetic_used = synthetic_used or r.is_synthetic
         f = Findings.model_validate(r.findings or {})
@@ -134,14 +134,14 @@ def correlate(
             n = f.network
             if n.registered_org:
                 out.facts.append(_fact(r, f"{r.source_name} déclare que le bloc de {ind.value} est enregistré au nom de "
-                                          f"« {n.registered_org} » (organisation enregistrée, pas l'utilisateur de l'adresse).", "network"))
+                                          f"{n.registered_org} (organisation enregistrée, pas l'utilisateur de l'adresse).", "network"))
                 out.relations.append(_rel(r, node_kind, node_value, "organisation", n.registered_org, "registered_to", 0.8))
             if n.asn:
                 out.facts.append(_fact(r, f"{r.source_name} indique l'ASN AS{n.asn}{f' ({n.as_name})' if n.as_name else ''} "
                                           f"pour {ind.value}.", "network"))
                 out.relations.append(_rel(r, node_kind, node_value, "asn", f"AS{n.asn}", "announced_by_asn", 0.8))
             if n.isp:
-                out.facts.append(_fact(r, f"{r.source_name} associe {ind.value} au fournisseur « {n.isp} ».", "network"))
+                out.facts.append(_fact(r, f"{r.source_name} associe {ind.value} au fournisseur {n.isp}.", "network"))
         if f.geo and (f.geo.country_code or f.geo.latitude is not None):
             answered.add("geolocation")
             loc = ", ".join(x for x in [f.geo.city, f.geo.region, f.geo.country or f.geo.country_code] if x)
@@ -153,7 +153,7 @@ def correlate(
                 r.source_name, group, reliability, f.reputation.verdict, f.reputation.score,
                 f.reputation.last_reported_at, r.is_synthetic,
             ))
-            out.facts.append(_fact(r, f"{r.source_name} : verdict « {VERDICT_FR.get(f.reputation.verdict, f.reputation.verdict)} »"
+            out.facts.append(_fact(r, f"{r.source_name} : verdict {VERDICT_FR.get(f.reputation.verdict, f.reputation.verdict)}"
                                       f"{f' ({f.reputation.raw_score})' if f.reputation.raw_score else ''} pour {ind.value}.", "reputation"))
             last = f.reputation.last_reported_at
             if last and now - last > timedelta(days=stale_after_days):
@@ -211,7 +211,7 @@ def correlate(
                                    "description": f"Verdict défavorable concordant de {len({g for _, g in bad})} groupes de sources indépendants."})
         elif len(bad) >= 2:
             out.notes.append(f"{ind.value} : {len(bad)} sources défavorables mais issues du même amont "
-                             f"({', '.join(sorted({g for _, g in bad}))}) — corroboration non indépendante.")
+                             f"({', '.join(sorted({g for _, g in bad}))}), corroboration non indépendante.")
 
     # --- missing information ------------------------------------------------------------
     if enrichable:
@@ -263,7 +263,7 @@ def _compare(out: CorrelationOutput, indicator: str, dimension: str, values: dic
              rows: list[EnrichmentResult]) -> None:
     distinct = set(values.values())
     if len(distinct) > 1:
-        detail = "; ".join(f"{s} → {v}" for (s, _), v in values.items())
+        detail = "; ".join(f"{s} : {v}" for (s, _), v in values.items())
         out.contradictions.append({
             "indicator": indicator, "dimension": dimension, "description": f"Valeurs divergentes ({detail}).",
             "evidence_ids": [_eid(r) for r in rows if any(r.source_name == s for s, _ in values)],

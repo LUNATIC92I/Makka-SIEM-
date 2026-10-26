@@ -1,8 +1,8 @@
 """AI provider abstraction.
 
-* ``deterministic`` — local rule-based analyst (no LLM, no data leaves the machine);
-* ``anthropic`` — Claude via the official Anthropic SDK (structured JSON output);
-* ``openai_compatible`` — any OpenAI-compatible chat endpoint (local Ollama, vLLM,
+* ``deterministic``, local rule-based analyst (no LLM, no data leaves the machine);
+* ``anthropic``, Claude via the official Anthropic SDK (structured JSON output);
+* ``openai_compatible``, any OpenAI-compatible chat endpoint (local Ollama, vLLM,
   LM Studio, or a hosted service).
 
 No provider receives tools: the model can only return a JSON document, which is

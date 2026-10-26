@@ -36,7 +36,7 @@ export default function InvestigationDetailPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <Link to="/investigations" className="text-xs text-slate-500 hover:text-cyanx-300">← Investigations</Link>
+          <Link to="/investigations" className="text-xs text-slate-500 hover:text-cyanx-300">Retour aux investigations</Link>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className="mono text-cyanx-300">{inv.reference}</span>
             <SeverityBadge severity={inv.severity} />
@@ -46,8 +46,8 @@ export default function InvestigationDetailPage() {
             {inv.restricted && <Pill className="border-ink-500 text-slate-300">Accès restreint</Pill>}
           </div>
           <h1 className="mt-1 break-words text-xl font-semibold text-slate-50">{inv.title}</h1>
-          <p className="text-xs text-slate-500">Créée {fmtDate(inv.created_at)} · mise à jour {fmtDate(inv.updated_at)} · traitement : {inv.pipeline_status}
-            {inv.enrichment_runs > 0 && ` · passe d'enrichissement n° ${inv.enrichment_runs}`}
+          <p className="text-xs text-slate-500">Créée {fmtDate(inv.created_at)}, mise à jour {fmtDate(inv.updated_at)}, traitement : {inv.pipeline_status}
+            {inv.enrichment_runs > 0 && `, passe d'enrichissement n° ${inv.enrichment_runs}`}
             {inv.superseded_results > 0 && ` (${inv.superseded_results} résultat(s) antérieur(s) conservé(s) dans l'historique Threat Intelligence)`}</p>
         </div>
         {can("investigations:write") && (
@@ -56,7 +56,7 @@ export default function InvestigationDetailPage() {
               {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
             <button className="btn-ghost" disabled={!!busy} onClick={() => act("rerun", () => api.post(`/investigations/${inv.id}/run-now`))}>
-              {busy === "rerun" ? "Enrichissement…" : "Relancer l'enrichissement"}
+              {busy === "rerun" ? "Enrichissement..." : "Relancer l'enrichissement"}
             </button>
             <button className="btn-ghost" onClick={() => act("restrict", () => api.patch(`/investigations/${inv.id}`, { restricted: !inv.restricted }))}>
               {inv.restricted ? "Lever la restriction" : "Restreindre l'accès"}
@@ -64,6 +64,9 @@ export default function InvestigationDetailPage() {
           </div>
         )}
       </div>
+      {(inv.pipeline_status === "running" || inv.pipeline_status === "pending" || busy === "rerun") && (
+        <div><div className="scan-bar" /><p className="mt-1 font-mono text-[11px] text-neon-400">ANALYSE EN COURS, interrogation des sources<span className="cursor-blink">_</span></p></div>
+      )}
       <ErrorBox error={actionError} />
 
       <Tabs<TabKey>
@@ -129,16 +132,16 @@ function SummaryTab({ inv }: { inv: InvestigationDetail }) {
               <div className="label">Géolocalisation estimée</div>
               <ValueList results={geo} get={(r) => {
                 const g = r.findings.geo!;
-                return [g.city, g.region, g.country ?? g.country_code].filter(Boolean).join(", ") + (g.accuracy_radius_km ? ` (±${g.accuracy_radius_km} km)` : "");
+                return [g.city, g.region, g.country ?? g.country_code].filter(Boolean).join(", ") + (g.accuracy_radius_km ? ` (précision ${g.accuracy_radius_km} km)` : "");
               }} />
               <p className="mt-1 text-[11px] text-amber-300/80">Estimation : n'identifie ni une personne ni une position exacte.</p>
               <div className="label mt-4">Réputation</div>
-              {reputation.length === 0 ? <Unavailable reason="aucune source de réputation n'a répondu (≠ innocuité)" /> : (
+              {reputation.length === 0 ? <Unavailable reason="aucune source de réputation n'a répondu (ce n'est pas une preuve d'innocuité)" /> : (
                 <ul className="space-y-1 text-sm">
                   {reputation.map((r) => (
                     <li key={r.id} className="flex items-center justify-between gap-2">
                       <span className="text-slate-300">{r.source_display}{r.is_synthetic && <span className="ml-1 text-[10px] text-amber-300">DÉMO</span>}</span>
-                      <span className={verdictTone(r.findings.reputation?.verdict)}>{VERDICT_LABELS[r.findings.reputation?.verdict ?? "unknown"]} {r.findings.reputation?.raw_score ? `· ${r.findings.reputation.raw_score}` : ""}</span>
+                      <span className={verdictTone(r.findings.reputation?.verdict)}>{VERDICT_LABELS[r.findings.reputation?.verdict ?? "unknown"]} {r.findings.reputation?.raw_score ? `, ${r.findings.reputation.raw_score}` : ""}</span>
                     </li>
                   ))}
                 </ul>
@@ -159,17 +162,17 @@ function SummaryTab({ inv }: { inv: InvestigationDetail }) {
                       <td className="whitespace-nowrap">{f.label}</td>
                       <td>{f.value == null ? <span className="text-xs text-slate-500">inconnu (exclu)</span> : <ScoreBar value={f.value * 100} tone="bg-orange-400" />}</td>
                       <td className="mono">{f.weight}</td>
-                      <td className="mono">{f.contribution ?? "—"}</td>
+                      <td className="mono">{f.contribution ?? "N/D"}</td>
                       <td className="text-xs text-slate-400">{f.rationale}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <h4 className="mt-4 text-sm font-semibold text-slate-200">Niveau de confiance — solidité des éléments</h4>
+              <h4 className="mt-4 text-sm font-semibold text-slate-200">Niveau de confiance, solidité des éléments</h4>
               <ul className="mt-2 space-y-1 text-xs text-slate-400">
-                {scoring.confidence_factors.map((c) => <li key={c.label}><span className="text-slate-200">{c.label}</span> ({Math.round(c.value * 100)} %, poids {c.weight}) — {c.rationale}</li>)}
+                {scoring.confidence_factors.map((c) => <li key={c.label}><span className="text-slate-200">{c.label}</span> ({Math.round(c.value * 100)} %, poids {c.weight}), {c.rationale}</li>)}
                 {scoring.confidence_penalties.map((p) => <li key={p.label} className="text-amber-300">Pénalité : {p.label} ({p.points} pts)</li>)}
-                {scoring.notes.map((n) => <li key={n} className="text-slate-500">• {n}</li>)}
+                {scoring.notes.map((n) => <li key={n} className="text-slate-500">{n}</li>)}
               </ul>
             </>
           )}
@@ -194,8 +197,8 @@ function SummaryTab({ inv }: { inv: InvestigationDetail }) {
               <dt className="text-slate-500">ID d'origine</dt><dd className="mono break-all">{ev.source_system}:{ev.original_id}</dd>
               <dt className="text-slate-500">Événement</dt><dd>{ev.title}</dd>
               <dt className="text-slate-500">Type</dt><dd>{ev.event_type}</dd>
-              <dt className="text-slate-500">Source</dt><dd className="mono">{ev.src_ip ?? "—"}{ev.src_port ? `:${ev.src_port}` : ""}</dd>
-              <dt className="text-slate-500">Cible</dt><dd className="mono">{ev.hostname ?? "—"} {ev.dst_ip ? `(${ev.dst_ip}${ev.dst_port ? `:${ev.dst_port}` : ""}/${ev.protocol ?? "?"})` : ""}</dd>
+              <dt className="text-slate-500">Source</dt><dd className="mono">{ev.src_ip ?? "N/D"}{ev.src_port ? `:${ev.src_port}` : ""}</dd>
+              <dt className="text-slate-500">Cible</dt><dd className="mono">{ev.hostname ?? "N/D"} {ev.dst_ip ? `(${ev.dst_ip}${ev.dst_port ? `:${ev.dst_port}` : ""}/${ev.protocol ?? "?"})` : ""}</dd>
               <dt className="text-slate-500">Tentatives</dt><dd>{inv.events.reduce((s, e) => s + (e.attempt_count ?? 1), 0)} sur {inv.events.length} événement(s)</dd>
             </dl>
           ) : <Empty>Investigation manuelle (sans événement SIEM).</Empty>}
@@ -213,7 +216,7 @@ function SummaryTab({ inv }: { inv: InvestigationDetail }) {
         </Card>
         {!!corr?.contradictions?.length && (
           <Card title="Contradictions entre sources">
-            <ul className="space-y-1 text-sm text-amber-200">{corr.contradictions.map((c, i) => <li key={i}>{c.indicator} — {c.dimension} : {c.description}</li>)}</ul>
+            <ul className="space-y-1 text-sm text-amber-200">{corr.contradictions.map((c, i) => <li key={i}>{c.indicator}, {c.dimension} : {c.description}</li>)}</ul>
           </Card>
         )}
         {!!corr?.agreements?.length && (
@@ -223,10 +226,10 @@ function SummaryTab({ inv }: { inv: InvestigationDetail }) {
         )}
         <Card title="Éléments manquants et erreurs de collecte">
           <ul className="space-y-1 text-sm">
-            {(corr?.missing ?? []).map((m) => <li key={m} className="text-slate-300">• {m}</li>)}
-            {(corr?.collection_errors ?? []).map((e, i) => <li key={i} className="text-rose-300">• {e.source} ({e.indicator}) : {e.status} — {e.message}</li>)}
-            {(corr?.stale ?? []).map((s, i) => <li key={`s${i}`} className="text-amber-300">• Donnée ancienne : {s.source} — {s.message}</li>)}
-            {(corr?.notes ?? []).map((n) => <li key={n} className="text-slate-500">• {n}</li>)}
+            {(corr?.missing ?? []).map((m) => <li key={m} className="text-slate-300">{m}</li>)}
+            {(corr?.collection_errors ?? []).map((e, i) => <li key={i} className="text-rose-300">{e.source} ({e.indicator}) : {e.status}, {e.message}</li>)}
+            {(corr?.stale ?? []).map((s, i) => <li key={`s${i}`} className="text-amber-300">Donnée ancienne : {s.source}, {s.message}</li>)}
+            {(corr?.notes ?? []).map((n) => <li key={n} className="text-slate-500">{n}</li>)}
             {!corr?.missing?.length && !corr?.collection_errors?.length && <li className="text-slate-500">Aucun élément signalé.</li>}
           </ul>
         </Card>
@@ -241,7 +244,7 @@ function ValueList({ results, get }: { results: EnrichmentResult[]; get: (r: Enr
   return (
     <ul className="space-y-0.5 text-sm">
       {rows.map(([r, v]) => (
-        <li key={r.id}><span className="text-slate-200">{v}</span> <span className="text-xs text-slate-500">— {r.source_display} [{r.evidence_id}]</span>{r.is_synthetic && <span className="ml-1 text-[10px] text-amber-300">DÉMO</span>}</li>
+        <li key={r.id}><span className="text-slate-200">{v}</span> <span className="text-xs text-slate-500">source : {r.source_display} [{r.evidence_id}]</span>{r.is_synthetic && <span className="ml-1 text-[10px] text-amber-300">DÉMO</span>}</li>
       ))}
     </ul>
   );
@@ -264,19 +267,19 @@ function OsintTab({ inv }: { inv: InvestigationDetail }) {
             <span className="font-semibold text-slate-100">{r.source_display}</span>
             <ResultStatusPill status={r.status} />
             {r.is_synthetic && <SyntheticTag />}
-            <span className="text-xs text-slate-500">{r.category} · amont « {r.upstream_group} » · fiabilité {r.reliability}</span>
+            <span className="text-xs text-slate-500">{r.category}, amont {r.upstream_group}, fiabilité {r.reliability}</span>
             <span className="ml-auto mono text-xs text-slate-400">{r.indicator}</span>
           </div>
           <div className="mt-2 grid gap-2 text-xs text-slate-400 md:grid-cols-4">
             <span>Consulté : <span className="mono text-slate-300">{fmtDate(r.queried_at)}</span></span>
             <span>Donnée du : <span className="mono text-slate-300">{fmtDate(r.data_updated_at)}</span></span>
-            <span>Durée : {r.duration_ms ?? "—"} ms</span>
+            <span>Durée : {r.duration_ms ?? "N/D"} ms</span>
             <span>Confiance source : {r.source_confidence ?? "non communiquée"}</span>
           </div>
           {r.status !== "ok" ? <div className="mt-2"><Unavailable reason={r.error_message} /></div> : <FindingsView r={r} />}
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
-            {r.reference_url && <a href={r.reference_url} target="_blank" rel="noopener noreferrer" className="text-cyanx-400 hover:underline">Consulter la source ↗</a>}
-            {r.raw_sha256 && <span className="mono text-slate-500">sha256 brut : {r.raw_sha256.slice(0, 16)}…</span>}
+            {r.reference_url && <a href={r.reference_url} target="_blank" rel="noopener noreferrer" className="text-cyanx-400 hover:underline">Consulter la source</a>}
+            {r.raw_sha256 && <span className="mono text-slate-500">sha256 brut : {r.raw_sha256.slice(0, 16)}...</span>}
             <button className="text-slate-400 hover:text-cyanx-300" onClick={() => (raw?.id === r.id ? setRaw(null) : showRaw(r))}>{raw?.id === r.id ? "Masquer" : "Voir"} la réponse brute</button>
           </div>
           {raw?.id === r.id && <pre className="mt-2 max-h-80 overflow-auto rounded-lg bg-ink-950 p-3 text-[11px] text-slate-400">{JSON.stringify(raw.data, null, 2)}</pre>}
@@ -290,14 +293,14 @@ function FindingsView({ r }: { r: EnrichmentResult }) {
   const f = r.findings;
   return (
     <div className="mt-2 space-y-1 text-sm">
-      {f.network && <div><span className="text-slate-500">Réseau : </span>{[f.network.registered_org && `org. enregistrée ${f.network.registered_org}`, f.network.asn && `AS${f.network.asn}`, f.network.as_name, f.network.isp && `FAI ${f.network.isp}`, f.network.cidr, f.network.bgp_prefix && `préfixe ${f.network.bgp_prefix}`, f.network.rir].filter(Boolean).join(" · ")}</div>}
-      {f.geo && <div><span className="text-slate-500">Géolocalisation estimée : </span>{[f.geo.city, f.geo.region, f.geo.country ?? f.geo.country_code].filter(Boolean).join(", ")}{f.geo.latitude != null && ` (${f.geo.latitude}, ${f.geo.longitude})`}{f.geo.accuracy_radius_km ? ` ±${f.geo.accuracy_radius_km} km` : ""}</div>}
-      {f.reputation && <div><span className="text-slate-500">Réputation : </span><span className={verdictTone(f.reputation.verdict)}>{VERDICT_LABELS[f.reputation.verdict]}</span>{f.reputation.raw_score && ` · ${f.reputation.raw_score}`}{f.reputation.last_reported_at && ` · dernier signalement ${fmtDate(f.reputation.last_reported_at)}`}{f.reputation.explanation && <div className="text-xs text-slate-500">{f.reputation.explanation}</div>}</div>}
-      {!!f.resolutions?.length && <div><span className="text-slate-500">Résolutions : </span>{f.resolutions.slice(0, 10).map((x) => `${x.type} ${x.value} (${x.temporality})`).join(" · ")}</div>}
-      {!!f.certificates?.length && <div><span className="text-slate-500">Certificats : </span>{f.certificates.length} — {f.certificates.slice(0, 3).map((c) => c.subject_cn).join(", ")}</div>}
-      {!!f.related?.length && <div><span className="text-slate-500">Indicateurs associés : </span>{f.related.slice(0, 8).map((x) => `${x.value} (${x.relation})`).join(" · ")}</div>}
-      {!!f.campaigns?.length && <div><span className="text-slate-500">Campagnes / rapports : </span>{f.campaigns.map((c) => c.name).join(" · ")}</div>}
-      {f.services && <div><span className="text-slate-500">Services exposés (passif) : </span>ports {f.services.ports.join(", ")}{f.services.vulns.length ? ` · ${f.services.vulns.length} CVE déclarées` : ""}</div>}
+      {f.network && <div><span className="text-slate-500">Réseau : </span>{[f.network.registered_org && `org. enregistrée ${f.network.registered_org}`, f.network.asn && `AS${f.network.asn}`, f.network.as_name, f.network.isp && `FAI ${f.network.isp}`, f.network.cidr, f.network.bgp_prefix && `préfixe ${f.network.bgp_prefix}`, f.network.rir].filter(Boolean).join(", ")}</div>}
+      {f.geo && <div><span className="text-slate-500">Géolocalisation estimée : </span>{[f.geo.city, f.geo.region, f.geo.country ?? f.geo.country_code].filter(Boolean).join(", ")}{f.geo.latitude != null && ` (${f.geo.latitude}, ${f.geo.longitude})`}{f.geo.accuracy_radius_km ? `, précision ${f.geo.accuracy_radius_km} km` : ""}</div>}
+      {f.reputation && <div><span className="text-slate-500">Réputation : </span><span className={verdictTone(f.reputation.verdict)}>{VERDICT_LABELS[f.reputation.verdict]}</span>{f.reputation.raw_score && `, ${f.reputation.raw_score}`}{f.reputation.last_reported_at && `, dernier signalement ${fmtDate(f.reputation.last_reported_at)}`}{f.reputation.explanation && <div className="text-xs text-slate-500">{f.reputation.explanation}</div>}</div>}
+      {!!f.resolutions?.length && <div><span className="text-slate-500">Résolutions : </span>{f.resolutions.slice(0, 10).map((x) => `${x.type} ${x.value} (${x.temporality})`).join(", ")}</div>}
+      {!!f.certificates?.length && <div><span className="text-slate-500">Certificats : </span>{f.certificates.length}, {f.certificates.slice(0, 3).map((c) => c.subject_cn).join(", ")}</div>}
+      {!!f.related?.length && <div><span className="text-slate-500">Indicateurs associés : </span>{f.related.slice(0, 8).map((x) => `${x.value} (${x.relation})`).join(", ")}</div>}
+      {!!f.campaigns?.length && <div><span className="text-slate-500">Campagnes / rapports : </span>{f.campaigns.map((c) => c.name).join(", ")}</div>}
+      {f.services && <div><span className="text-slate-500">Services exposés (passif) : </span>ports {f.services.ports.join(", ")}{f.services.vulns.length ? `, ${f.services.vulns.length} CVE déclarées` : ""}</div>}
       {f.notes?.map((n) => <div key={n} className="text-xs text-slate-500">{n}</div>)}
     </div>
   );
@@ -339,7 +342,7 @@ function AITab({ inv, busy, run }: { inv: InvestigationDetail; busy: string | nu
       <Card title="Analyse assistée par IA" actions={can("ai:run") && (
         <div className="flex gap-2">
           <button className="btn-ghost" disabled={!!busy} onClick={() => run("deterministic")}>Moteur déterministe</button>
-          <button className="btn-primary" disabled={!!busy} onClick={() => run(undefined)}>{busy === "ai" ? "Analyse…" : "Relancer (fournisseur configuré)"}</button>
+          <button className="btn-primary" disabled={!!busy} onClick={() => run(undefined)}>{busy === "ai" ? "Analyse..." : "Relancer (fournisseur configuré)"}</button>
         </div>
       )}>
         {!a ? <Empty>Aucune analyse.</Empty> : (
@@ -347,14 +350,14 @@ function AITab({ inv, busy, run }: { inv: InvestigationDetail; busy: string | nu
             <div className="flex flex-wrap items-center gap-2">
               <ProvenanceTag kind="ai_generated" />
               <Pill className={a.status === "ok" ? "border-emerald-700 text-emerald-300" : "border-rose-700 text-rose-300"}>{a.status}</Pill>
-              <span className="text-xs text-slate-400">{a.provider} / {a.model ?? "—"} · {fmtDate(a.created_at)} · données envoyées hors poste : {a.data_sent_externally ? "oui" : "non"}</span>
+              <span className="text-xs text-slate-400">{a.provider} / {a.model ?? "N/D"}, {fmtDate(a.created_at)}, données envoyées hors poste : {a.data_sent_externally ? "oui" : "non"}</span>
             </div>
             <div className="mono text-[11px] text-slate-500">Empreinte des données d'entrée : {a.input_sha256}</div>
             {a.error_message && <div className="rounded border border-amber-700/60 bg-amber-950/30 p-2 text-amber-200">{a.error_message}</div>}
             {!!a.injection_flags.length && (
               <div className="rounded border border-rose-700/60 bg-rose-950/30 p-2 text-rose-200">
-                {a.injection_flags.length} tentative(s) d'injection de prompt détectée(s) dans les données analysées — traitées comme données, jamais comme instructions :
-                <ul className="mt-1 text-xs">{a.injection_flags.slice(0, 5).map((f, i) => <li key={i} className="mono">{f.path} · {f.pattern} · « {f.excerpt} »</li>)}</ul>
+                {a.injection_flags.length} tentative(s) d'injection de prompt détectée(s) dans les données analysées, traitées comme données, jamais comme instructions :
+                <ul className="mt-1 text-xs">{a.injection_flags.slice(0, 5).map((f, i) => <li key={i} className="mono">{f.path}, {f.pattern}, "{f.excerpt}"</li>)}</ul>
               </div>
             )}
             {!!a.validation_issues.length && <div className="text-xs text-amber-300">Corrections de validation : {a.validation_issues.join(" ; ")}</div>}
@@ -373,27 +376,27 @@ function AITab({ inv, busy, run }: { inv: InvestigationDetail; busy: string | nu
           <Card title="Hypothèses alternatives"><ul className="space-y-2 text-sm">{o.alternative_hypotheses.map((h, i) => <li key={i}><div className="text-slate-200">{h.statement}</div><div className="text-xs text-slate-400">{h.rationale}</div></li>)}</ul></Card>
           <Card title="Éléments contradictoires et manquants">
             <ul className="space-y-1 text-sm">
-              {o.contradictions.map((c, i) => <li key={i} className="text-amber-200">• {c.description}</li>)}
-              {o.missing_information.map((m, i) => <li key={`m${i}`} className="text-slate-300">• {m}</li>)}
+              {o.contradictions.map((c, i) => <li key={i} className="text-amber-200">{c.description}</li>)}
+              {o.missing_information.map((m, i) => <li key={`m${i}`} className="text-slate-300">{m}</li>)}
             </ul>
           </Card>
           <Card title="Techniques MITRE ATT&CK (hypothèses)">
             {o.mitre_attack.length ? <ul className="space-y-2 text-sm">{o.mitre_attack.map((m) => <li key={m.technique_id}><span className="mono text-cyanx-300">{m.technique_id}</span> {m.name}<div className="text-xs text-slate-400">{m.justification}</div></li>)}</ul> : <Empty>Aucune technique justifiée par les preuves.</Empty>}
           </Card>
           <Card title="Attribution">
-            {o.threat_actor_attribution.length ? o.threat_actor_attribution.map((t) => <div key={t.actor} className="text-sm">{t.actor} — confiance {t.confidence} [{t.evidence_ids.join(",")}] · alternatives : {t.alternatives.join(", ")}</div>)
+            {o.threat_actor_attribution.length ? o.threat_actor_attribution.map((t) => <div key={t.actor} className="text-sm">{t.actor}, confiance {t.confidence} [{t.evidence_ids.join(",")}], alternatives : {t.alternatives.join(", ")}</div>)
               : <p className="text-sm text-slate-400">Aucune attribution : les éléments ne le justifient pas. Une adresse IP ne permet pas d'attribuer une attaque à une personne, un groupe ou un pays.</p>}
           </Card>
           <Card title="Risque et confiance">
-            <p className="text-sm"><b>Risque {o.estimated_risk.level}</b> — <span className="text-slate-400">{o.estimated_risk.rationale}</span></p>
-            <p className="mt-2 text-sm"><b>Confiance {o.confidence.level}</b> — <span className="text-slate-400">{o.confidence.rationale}</span></p>
+            <p className="text-sm"><b>Risque {o.estimated_risk.level}</b>, <span className="text-slate-400">{o.estimated_risk.rationale}</span></p>
+            <p className="mt-2 text-sm"><b>Confiance {o.confidence.level}</b>, <span className="text-slate-400">{o.confidence.rationale}</span></p>
           </Card>
           <Card title="Actions recommandées (validation humaine requise)">
             <ul className="space-y-1.5 text-sm">{o.recommended_actions.map((x, i) => <li key={i}><Pill className="mr-2 border-ink-500 text-slate-300">{x.priority}</Pill>{x.action}</li>)}</ul>
           </Card>
           <Card title="Références et limites" className="xl:col-span-2">
             <ul className="mb-3 space-y-0.5 text-xs">{o.references.map((r) => <li key={r.evidence_id}><span className="mono text-slate-500">{r.evidence_id}</span> {r.source} {r.url && <a className="text-cyanx-400" href={r.url} target="_blank" rel="noopener noreferrer">{r.url}</a>}</li>)}</ul>
-            <ul className="space-y-0.5 text-xs text-slate-400">{o.limitations.map((l, i) => <li key={i}>• {l}</li>)}</ul>
+            <ul className="space-y-0.5 text-xs text-slate-400">{o.limitations.map((l, i) => <li key={i}>{l}</li>)}</ul>
           </Card>
         </div>
       )}
@@ -402,7 +405,7 @@ function AITab({ inv, busy, run }: { inv: InvestigationDetail; busy: string | nu
 }
 
 const EvidenceList = ({ items }: { items: { text: string; ids: string[] }[] }) => (
-  items.length ? <ul className="space-y-1.5 text-sm">{items.map((x, i) => <li key={i}><span className="mono mr-1 text-xs text-slate-500">[{x.ids.join(",")}]</span>{x.text}</li>)}</ul> : <Empty>—</Empty>
+  items.length ? <ul className="space-y-1.5 text-sm">{items.map((x, i) => <li key={i}><span className="mono mr-1 text-xs text-slate-500">[{x.ids.join(",")}]</span>{x.text}</li>)}</ul> : <Empty>Aucun élément.</Empty>
 );
 
 function EventsTab({ inv }: { inv: InvestigationDetail }) {
@@ -414,7 +417,7 @@ function EventsTab({ inv }: { inv: InvestigationDetail }) {
             <span>ID d'origine : <span className="mono text-slate-200">{e.source_system}:{e.original_id}</span></span>
             <span>Horodatage : <span className="mono text-slate-200">{fmtDate(e.event_time)}</span></span>
             <span>Reçu : <span className="mono">{fmtDate(e.received_at)}</span> ({e.ingest_method})</span>
-            <span>Sévérité : {e.severity} (brute : {e.severity_raw ?? "—"})</span>
+            <span>Sévérité : {e.severity} (brute : {e.severity_raw ?? "N/D"})</span>
           </div>
           <div className="mono mb-2 text-[11px] text-slate-500">sha256 du contenu brut : {e.raw_sha256}</div>
           <pre className="max-h-96 overflow-auto rounded-lg bg-ink-950 p-3 text-[11px] text-slate-400">{JSON.stringify(e.raw, null, 2)}</pre>
@@ -438,14 +441,14 @@ function NotesTab({ inv, onSaved }: { inv: InvestigationDetail; onSaved: () => v
       <Card title="Décisions et notes de l'analyste" className="xl:col-span-2">
         {inv.notes.length ? (
           <ul className="space-y-3">{inv.notes.map((n) => (
-            <li key={n.id} className="rounded-lg border border-ink-700 p-3 text-sm"><div className="mb-1 text-xs text-slate-500">{fmtDate(n.created_at)} · {n.author} · <span className="uppercase">{n.kind}</span></div><div className="whitespace-pre-wrap text-slate-200">{n.content}</div></li>
+            <li key={n.id} className="rounded-lg border border-ink-700 p-3 text-sm"><div className="mb-1 text-xs text-slate-500">{fmtDate(n.created_at)}, {n.author}, <span className="uppercase">{n.kind}</span></div><div className="whitespace-pre-wrap text-slate-200">{n.content}</div></li>
           ))}</ul>
         ) : <Empty>Aucune décision enregistrée.</Empty>}
       </Card>
       {can("investigations:write") && (
         <Card title="Ajouter">
           <select className="input mb-2" value={kind} onChange={(e) => setKind(e.target.value as "note" | "decision")}><option value="decision">Décision</option><option value="note">Note</option></select>
-          <textarea className="input h-40" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Ex. : blocage périmétrique validé, ticket CHG-1234…" />
+          <textarea className="input h-40" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Ex. : blocage périmétrique validé, ticket CHG-1234..." />
           <ErrorBox error={err} />
           <button className="btn-primary mt-2" disabled={!content.trim()} onClick={save}>Enregistrer (journalisé)</button>
         </Card>
@@ -478,11 +481,11 @@ function ReportsTab({ inv, onCreated }: { inv: InvestigationDetail; onCreated: (
           <tbody>{inv.reports.map((r) => (
             <tr key={r.id}>
               <td className="mono">{r.file_name}</td><td>{r.kind} / {r.format}</td><td className="mono">{fmtDate(r.created_at)}</td>
-              <td className="mono text-xs text-slate-500">{r.sha256.slice(0, 20)}…</td>
+              <td className="mono text-xs text-slate-500">{r.sha256.slice(0, 20)}...</td>
               <td className="whitespace-nowrap text-right">
                 <button className="btn-ghost mr-2" onClick={() => api.download(`/reports/${r.id}/download`, r.file_name)}>Télécharger</button>
-                <button className="btn-ghost" onClick={async () => { const v = await api.get<{ valid: boolean }>(`/reports/${r.id}/verify`); setVerify({ ...verify, [r.id]: v.valid ? "✓ intègre" : "✗ modifié" }); }}>Vérifier</button>
-                {verify[r.id] && <span className={`ml-2 text-xs ${verify[r.id].startsWith("✓") ? "text-emerald-300" : "text-rose-300"}`}>{verify[r.id]}</span>}
+                <button className="btn-ghost" onClick={async () => { const v = await api.get<{ valid: boolean }>(`/reports/${r.id}/verify`); setVerify({ ...verify, [r.id]: v.valid ? "Intègre" : "Modifié" }); }}>Vérifier</button>
+                {verify[r.id] && <span className={`ml-2 text-xs ${verify[r.id] === "Intègre" ? "text-emerald-300" : "text-rose-300"}`}>{verify[r.id]}</span>}
               </td>
             </tr>
           ))}</tbody>

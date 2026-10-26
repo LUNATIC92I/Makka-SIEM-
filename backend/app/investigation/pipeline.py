@@ -66,7 +66,7 @@ async def run_investigation(db: Session, investigation_id: str, *, actor: str = 
     enrichable = {link.indicator_id: link.indicator for link in links if link.indicator.scope == "public"}
     providers = active_providers(db)
 
-    # 1. enrichment — previous results are kept as history (superseded), relations are rebuilt
+    # 1. enrichment, previous results are kept as history (superseded), relations are rebuilt
     pairs = await enrich(providers, list(enrichable.values()))
     run_number = (inv.enrichment_runs or 0) + 1
     db.execute(delete(IndicatorRelation).where(IndicatorRelation.investigation_id == inv.id))

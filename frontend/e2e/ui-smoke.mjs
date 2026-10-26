@@ -57,7 +57,7 @@ await page.click("[role=tab]:has-text(\"Rapports\")");
 await page.click("button:has-text(\"PDF technique\")");
 await page.waitForSelector("text=_technical_", { timeout: 20000 });
 await page.click("button:has-text(\"Vérifier\")");
-await page.waitForSelector("text=✓ intègre");
+await page.waitForSelector("text=Intègre");
 check(true, "rapport PDF généré et intègre");
 
 for (const nav of ["Cartographie", "Threat Intelligence", "Rapports", "Connecteurs", "File de tâches", "Paramètres"]) {

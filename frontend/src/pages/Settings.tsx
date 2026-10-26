@@ -1,3 +1,4 @@
+import GlitchText from "../fx/GlitchText";
 import { useEffect, useState } from "react";
 import { Card, ErrorBox, Pill, Spinner, Tabs } from "../components/ui";
 import { useApi } from "../hooks/useApi";
@@ -25,18 +26,18 @@ export default function SettingsPage() {
   const ro = !can("settings:write");
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-slate-50">Paramètres</h1>
+      <GlitchText className="text-2xl font-semibold text-slate-50">Paramètres</GlitchText>
       <Tabs tabs={tabs} active={tab} onChange={setTab} />
       {tab === "scoring" && <ScoringEditor value={data.scoring} readOnly={ro} onSaved={reload} />}
       {tab === "ingestion" && <JsonEditor title="Règles d'ingestion" k="ingestion" value={data.ingestion} readOnly={ro} onSaved={reload}
         help="auto_investigate_min_severity : seuil de création automatique (info|low|medium|high|critical). group_window_minutes / group_by_source_ip : regroupement des événements d'une même source dans une investigation ouverte. max_events_per_poll : taille des lots de collecte." />}
       {tab === "assets" && <JsonEditor title="Criticité des actifs" k="assets" value={data.assets} readOnly={ro} onSaved={reload}
-        help="patterns : motifs (fnmatch) sur le nom d'hôte ou l'IP de destination → low|medium|high|critical. default_criticality s'applique aux cibles non référencées." />}
+        help="patterns : motifs (fnmatch) sur le nom d'hôte ou l'IP de destination, valeurs : low, medium, high, critical. default_criticality s'applique aux cibles non référencées." />}
       {tab === "retention" && <JsonEditor title="Politique de conservation" k="retention" value={data.retention} readOnly={ro} onSaved={reload}
         help="Durées en jours : investigations clôturées, événements bruts non rattachés, tâches terminées. Les journaux d'audit ne sont jamais purgés automatiquement." extra={!ro && <button className="btn-ghost" onClick={async () => { const r = await api.post<Record<string, number>>("/admin/retention/run"); alert(`Purge : ${JSON.stringify(r)}`); }}>Lancer la purge maintenant</button>} />}
       {tab === "users" && <UsersAdmin />}
       {tab === "audit" && <AuditView />}
-      {tab === "system" && <Card title="Configuration d'exécution (lecture seule — variables MAKKADI_* / fichier .env)"><pre className="text-xs text-slate-300">{JSON.stringify(data.runtime, null, 2)}</pre></Card>}
+      {tab === "system" && <Card title="Configuration d'exécution (lecture seule, variables MAKKADI_* / fichier .env)"><pre className="text-xs text-slate-300">{JSON.stringify(data.runtime, null, 2)}</pre></Card>}
     </div>
   );
 }
@@ -58,11 +59,11 @@ function ScoringEditor({ value, readOnly, onSaved }: { value: Record<string, any
   return (
     <Card title="Mécanisme de scoring">
       <p className="mb-4 text-xs text-slate-400">Le <b>risque</b> est la moyenne pondérée des facteurs connus (les facteurs inconnus sont exclus et réduisent la confiance). La <b>confiance</b> mesure la solidité des preuves : sources indépendantes effectives (même amont compté une fois), couverture des dimensions, pénalités pour contradictions, données obsolètes et erreurs. Voir docs/SCORING.md.</p>
-      <h3 className="mb-2 text-sm font-semibold">Pondérations des facteurs de risque (0–1)</h3>
+      <h3 className="mb-2 text-sm font-semibold">Pondérations des facteurs de risque (de 0 à 1)</h3>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-6">{num(weights, setWeights)}</div>
-      <h3 className="mb-2 mt-4 text-sm font-semibold">Seuils des niveaux de risque (0–100)</h3>
+      <h3 className="mb-2 mt-4 text-sm font-semibold">Seuils des niveaux de risque (de 0 à 100)</h3>
       <div className="grid grid-cols-3 gap-3 md:grid-cols-6">{num(risk, setRisk, 1)}</div>
-      <h3 className="mb-2 mt-4 text-sm font-semibold">Seuils des niveaux de confiance (0–100)</h3>
+      <h3 className="mb-2 mt-4 text-sm font-semibold">Seuils des niveaux de confiance (de 0 à 100)</h3>
       <div className="grid grid-cols-3 gap-3 md:grid-cols-6">{num(conf, setConf, 1)}</div>
       <div className="mt-4 w-56"><label className="label">Donnée obsolète après (jours)</label><input type="number" className="input" disabled={readOnly} value={stale} onChange={(e) => setStale(Number(e.target.value))} /></div>
       <ErrorBox error={err} />
@@ -124,7 +125,7 @@ function UsersAdmin() {
           <button className="btn-primary" onClick={create}>Créer</button>
         </Card>
         <Card title="Rôles et permissions">
-          <ul className="space-y-2 text-xs">{(roles.data ?? []).map((r) => <li key={r.name}><b className="text-slate-200">{r.name}</b> — {r.description}<div className="text-slate-500">{r.permissions.join(", ")}</div></li>)}</ul>
+          <ul className="space-y-2 text-xs">{(roles.data ?? []).map((r) => <li key={r.name}><b className="text-slate-200">{r.name}</b>, {r.description}<div className="text-slate-500">{r.permissions.join(", ")}</div></li>)}</ul>
         </Card>
       </div>
     </div>
@@ -136,7 +137,7 @@ function AuditView() {
   const [verify, setVerify] = useState<{ valid: boolean; entries_checked: number; first_invalid_id?: number } | null>(null);
   return (
     <Card title="Journal d'audit (chaîné par empreintes SHA-256)" actions={<button className="btn-ghost" onClick={async () => setVerify(await api.get("/audit/verify"))}>Vérifier l'intégrité de la chaîne</button>}>
-      {verify && <div className={`mb-3 text-sm ${verify.valid ? "text-emerald-300" : "text-rose-300"}`}>{verify.valid ? `✓ Chaîne intègre (${verify.entries_checked} entrées).` : `✗ Rupture détectée à l'entrée #${verify.first_invalid_id}.`} Journal inviolable au sens « modification détectable », pas « modification impossible ».</div>}
+      {verify && <div className={`mb-3 text-sm ${verify.valid ? "text-emerald-300" : "text-rose-300"}`}>{verify.valid ? `Chaîne intègre (${verify.entries_checked} entrées).` : `Rupture détectée à l'entrée #${verify.first_invalid_id}.`} Journal inviolable au sens modification détectable, pas modification impossible.</div>}
       <div className="max-h-[600px] overflow-auto">
         <table className="table">
           <thead><tr><th>#</th><th>Horodatage (UTC)</th><th>Acteur</th><th>Action</th><th>Cible</th><th>Détails</th></tr></thead>

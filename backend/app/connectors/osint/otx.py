@@ -1,4 +1,4 @@
-"""AlienVault OTX — community threat intelligence pulses."""
+"""AlienVault OTX, community threat intelligence pulses."""
 
 from __future__ import annotations
 

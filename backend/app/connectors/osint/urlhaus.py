@@ -1,4 +1,4 @@
-"""URLhaus (abuse.ch) — malware distribution URLs/hosts. Auth-Key required."""
+"""URLhaus (abuse.ch), malware distribution URLs/hosts. Auth-Key required."""
 
 from __future__ import annotations
 

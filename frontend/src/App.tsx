@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
+import MatrixRain from "./fx/MatrixRain";
+import CrtOverlay from "./fx/Overlay";
 import { Spinner } from "./components/ui";
 import { useAuth } from "./hooks/useAuth";
 import ConnectorsPage from "./pages/Connectors";
@@ -15,8 +17,16 @@ import ThreatIntelPage from "./pages/ThreatIntel";
 
 export default function App() {
   const { user, ready } = useAuth();
-  if (!ready) return <Spinner label="Démarrage…" />;
-  if (!user) return <LoginPage />;
+  return (
+    <>
+      <MatrixRain opacity={user ? 0.1 : 0.22} />
+      <CrtOverlay />
+      {!ready ? <Spinner label="Démarrage..." /> : !user ? <LoginPage /> : <AppRoutes />}
+    </>
+  );
+}
+
+function AppRoutes() {
   return (
     <Routes>
       <Route element={<Layout />}>

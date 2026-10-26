@@ -1,5 +1,19 @@
 import { FormEvent, useState } from "react";
 import { ErrorBox } from "../components/ui";
+import GlitchText from "../fx/GlitchText";
+import Radar from "../fx/Radar";
+import Typewriter from "../fx/Typewriter";
+import { useFx } from "../fx/useFx";
+
+const BOOT = [
+  "> Connexion au noyau MAKKADi............ [OK]",
+  "> Chargement des modules OSINT.......... [OK]",
+  "> Moteur de corrélation................. [OK]",
+  "> Coffre de secrets chiffré............. [OK]",
+  "> Journal d'audit chaîné SHA-256........ [OK]",
+  "> Écoute réseau limitée à 127.0.0.1..... [OK]",
+  "> Authentification requise",
+];
 import { useAuth } from "../hooks/useAuth";
 import { api } from "../services/api";
 
@@ -10,6 +24,8 @@ export default function LoginPage() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
+  const { enabled } = useFx();
+  const [booted, setBooted] = useState(!enabled);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -30,12 +46,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex h-full items-center justify-center bg-[radial-gradient(ellipse_at_top,rgba(47,107,255,0.15),transparent_60%)]">
-      <form onSubmit={submit} className="card w-[380px] p-6">
+    <div className="flex h-full items-center justify-center gap-10 px-6">
+      <div className="hidden w-[420px] flex-col gap-6 lg:flex">
+        <div className="card p-4">
+          <div className="mb-2 flex items-center gap-2 border-b border-neon-500/20 pb-2 font-mono text-[10px] text-slate-500">
+            <span className="h-2 w-2 rounded-full bg-rose-500" /><span className="h-2 w-2 rounded-full bg-amber-400" /><span className="h-2 w-2 rounded-full bg-neon-400" />
+            <span className="ml-2">makkadi@soc:~$ ./initialisation</span>
+          </div>
+          <Typewriter lines={BOOT} onDone={() => setBooted(true)} />
+        </div>
+        <div className="flex justify-center"><Radar blips={7} size={170} label="ANALYSE DU PÉRIMÈTRE" /></div>
+      </div>
+      <form onSubmit={submit} className={`card w-[380px] p-6 ${booted ? "reveal" : "invisible"}`}>
         <div className="mb-6 flex items-center gap-3">
           <img src="./favicon.svg" alt="" className="h-10 w-10" />
           <div>
-            <h1 className="text-xl font-bold text-slate-50">{meta?.app_name ?? "MAKKADi"}</h1>
+            <GlitchText className="text-xl font-bold text-slate-50 text-glow">{meta?.app_name ?? "MAKKADi"}</GlitchText>
             <p className="text-xs text-slate-400">{meta?.tagline}</p>
           </div>
         </div>
@@ -56,10 +82,10 @@ export default function LoginPage() {
           </>
         )}
         <ErrorBox error={error} />
-        <button className="btn-primary mt-4 w-full justify-center" disabled={busy}>
-          {needsSetup ? "Créer l'administrateur" : "Se connecter"}
+        <button className="btn-primary mt-4 w-full justify-center font-mono tracking-wider" disabled={busy}>
+          {busy ? "AUTHENTIFICATION..." : needsSetup ? "Créer l'administrateur" : "Se connecter"}
         </button>
-        <p className="mt-4 text-center text-[11px] text-slate-500">Serveur local — aucune exposition réseau par défaut.</p>
+        <p className="mt-4 text-center text-[11px] text-slate-500">Serveur local, aucune exposition réseau par défaut.</p>
       </form>
     </div>
   );

@@ -174,7 +174,7 @@ def create_investigation(db: Session, ev: SiemEvent, owner_id: int | None = None
         reference = _next_reference(db)
         title = ev.title or f"Événement {ev.event_type}"
         if ev.src_ip:
-            title = f"{title} — {ev.src_ip}"
+            title = f"{title}, {ev.src_ip}"
         inv = Investigation(
             reference=reference, title=title[:500], severity=ev.severity, source_system=ev.source_system,
             is_synthetic=ev.is_synthetic, owner_id=owner_id,

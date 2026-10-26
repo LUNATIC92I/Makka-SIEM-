@@ -1,4 +1,4 @@
-"""AbuseIPDB v2 — community abuse reports for IP addresses."""
+"""AbuseIPDB v2, community abuse reports for IP addresses."""
 
 from __future__ import annotations
 

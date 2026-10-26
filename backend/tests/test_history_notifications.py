@@ -50,7 +50,7 @@ def test_webhook_notification_sent_once_and_signed(client, admin, mock_http):
 
     mock_http(handler)
     ch = _channel(client, admin)
-    assert "notif-secret" not in json.dumps(ch) and ch["secrets"]["url"] == "••••••••"
+    assert "notif-secret" not in json.dumps(ch) and ch["secrets"]["url"] == "********"
     client.post(API + "/ingest/demo", headers=admin)
     drain()
     high = [i for i in client.get(API + "/investigations", headers=admin).json()["items"] if i["risk_level"] in ("élevé", "critique")]

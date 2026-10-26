@@ -5,7 +5,7 @@ import { qs } from "../../services/api";
 describe("format helpers", () => {
   it("formats UTC dates without milliseconds", () => {
     expect(fmtDate("2026-10-25T22:14:35.123Z")).toBe("2026-10-25 22:14:35Z");
-    expect(fmtDate(null)).toBe("—");
+    expect(fmtDate(null)).toBe("N/D");
   });
   it("maps every backend result status, including unavailable data", () => {
     for (const s of ["ok", "no_data", "error", "not_configured", "rate_limited", "unsupported"]) expect(RESULT_STATUS[s]).toBeDefined();

@@ -81,7 +81,7 @@ def build_payload(provider: str, inv: Investigation) -> dict[str, Any]:
         "synthetic_data": inv.is_synthetic, "created_at": iso(inv.created_at),
     }
     demo = " [DONNÉES DE DÉMONSTRATION]" if inv.is_synthetic else ""
-    text = (f"**{app_name}** — investigation {inv.reference}{demo}\n"
+    text = (f"**{app_name}**, investigation {inv.reference}{demo}\n"
             f"Risque **{inv.risk_level}** ({inv.risk_score}/100), confiance {inv.confidence_level} "
             f"({inv.confidence_score}/100)\n{inv.title}\nÀ examiner par un analyste : aucune action n'a été déclenchée.")
     if provider in ("teams", "slack"):
@@ -124,7 +124,7 @@ async def send(db: Session, channel: ConnectorConfig, inv: Investigation) -> Non
     secrets = decrypt_secrets(channel.secret_ciphertext)
     if channel.provider == "email":
         text = build_payload("slack", inv)["text"].replace("**", "")
-        subject = f"[{get_settings().app_name}] {inv.reference} — risque {inv.risk_level}"
+        subject = f"[{get_settings().app_name}] {inv.reference}, risque {inv.risk_level}"
         await asyncio.to_thread(_send_email, channel.settings or {}, secrets, subject, text)
         return
     url = secrets.get("url")

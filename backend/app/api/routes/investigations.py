@@ -171,7 +171,7 @@ def update_investigation(investigation_id: str, body: InvestigationPatch, reques
         inv.status = body.status
         inv.closed_at = utc_now() if body.status.startswith("closed") else None
         db.add(InvestigationNote(investigation_id=inv.id, user_id=user.id, kind="status",
-                                 content=f"Statut : {changes['status'][0]} → {body.status}"))
+                                 content=f"Statut : {changes['status'][0]} vers {body.status}"))
     if body.priority and body.priority != inv.priority:
         changes["priority"] = [inv.priority, body.priority]
         inv.priority = body.priority

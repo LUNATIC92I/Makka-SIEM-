@@ -1,4 +1,4 @@
-"""Windows DPAPI (CryptProtectData) via ctypes — binds key material to the Windows user account.
+"""Windows DPAPI (CryptProtectData) via ctypes, binds key material to the Windows user account.
 
 Only available on Windows; other platforms keep 0600-permission key files.
 """

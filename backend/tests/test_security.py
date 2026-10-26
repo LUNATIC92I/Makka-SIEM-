@@ -123,7 +123,7 @@ def test_secrets_never_exposed_or_stored_in_clear(client, admin, env):
     assert secret not in dump
     # masked value round-trip keeps the secret
     cid = r.json()["id"]
-    client.patch(API + f"/connectors/{cid}", headers=admin, json={"secrets": {"token": "••••••••"}})
+    client.patch(API + f"/connectors/{cid}", headers=admin, json={"secrets": {"token": "********"}})
     from app.database.session import SessionLocal
     from app.security.secrets_vault import decrypt_secrets
 

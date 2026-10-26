@@ -1,6 +1,8 @@
+import GlitchText from "../fx/GlitchText";
 import { Link, useNavigate } from "react-router-dom";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, ConfidenceBadge, Empty, ErrorBox, LevelBadge, SeverityBadge, Spinner, Stat, SyntheticTag } from "../components/ui";
+import Radar from "../fx/Radar";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../hooks/useAuth";
 import { fmtDate, fmtRelative } from "../lib/format";
@@ -42,12 +44,13 @@ export default function OverviewPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Vue d'ensemble</h1>
+          <GlitchText className="text-2xl font-semibold text-slate-50">Vue d'ensemble</GlitchText>
           <p className="text-sm text-slate-400">Activité des investigations et état de la collecte</p>
         </div>
+        <div className="hidden xl:block"><Radar blips={Math.min(12, Math.max(3, data.counts.open))} size={110} label={`${data.counts.open} CIBLE(S) SOUS ANALYSE`} /></div>
         {data.demo_mode && can("ingest:write") && (
           <button className="btn-primary" onClick={loadDemo} disabled={busy}>
-            {busy ? "Ingestion…" : "Charger le scénario de démonstration"}
+            {busy ? "Ingestion..." : "Charger le scénario de démonstration"}
           </button>
         )}
       </div>
@@ -109,8 +112,8 @@ export default function OverviewPage() {
                   <tr key={a.id}>
                     <td className="mono text-slate-400">{fmtDate(a.event_time)}</td>
                     <td>{a.title} {a.is_synthetic && <SyntheticTag />}</td>
-                    <td className="mono text-cyanx-300">{a.src_ip ?? "—"}</td>
-                    <td>{a.hostname ?? "—"}</td>
+                    <td className="mono text-cyanx-300">{a.src_ip ?? "N/D"}</td>
+                    <td>{a.hostname ?? "N/D"}</td>
                     <td><SeverityBadge severity={a.severity} /></td>
                   </tr>
                 ))}
@@ -138,7 +141,7 @@ export default function OverviewPage() {
             <ul className="divide-y divide-ink-800 text-sm">
               {data.connectors.map((c) => (
                 <li key={c.name} className="flex items-center justify-between py-2">
-                  <span><span className="text-slate-500">{c.kind.toUpperCase()}</span> · {c.display_name}</span>
+                  <span><span className="text-slate-500">{c.kind.toUpperCase()}</span>, {c.display_name}</span>
                   <span className={c.state.startsWith("opérationnel") ? "text-emerald-300" : c.state === "en erreur" ? "text-rose-300" : "text-amber-300"} title={c.last_error ?? ""}>{c.state}</span>
                 </li>
               ))}
@@ -146,7 +149,7 @@ export default function OverviewPage() {
           )}
         </Card>
         <Card title="Dernières activités">
-          {data.activities.length === 0 ? <Empty>—</Empty> : (
+          {data.activities.length === 0 ? <Empty>Aucun élément.</Empty> : (
             <ul className="space-y-1.5 text-sm">
               {data.activities.map((a, idx) => (
                 <li key={idx} className="flex gap-3"><span className="mono w-40 shrink-0 text-slate-500">{fmtDate(a.ts)}</span><span className="text-slate-300">{a.action}</span><span className="truncate text-slate-500">{a.actor} {a.target}</span></li>

@@ -3,7 +3,7 @@
 Maturity (honest status): every connector below is implemented against the
 vendor's documented REST API and covered by tests using mocked HTTP responses.
 None of them has been validated against a live tenant in this repository; the
-UI therefore shows them as "implémenté — non validé sur instance réelle" until
+UI therefore shows them as "implémenté, non validé sur instance réelle" until
 a successful ``test_connection`` is recorded by the operator.
 """
 

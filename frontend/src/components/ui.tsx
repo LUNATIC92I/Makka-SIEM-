@@ -15,11 +15,11 @@ export function Pill({ children, className = "" }: { children: ReactNode; classN
 }
 
 export const LevelBadge = ({ level, score, prefix = "Risque" }: { level: string | null | undefined; score?: number | null; prefix?: string }) => (
-  <Pill className={levelTone(level)}>{prefix} {level ?? "en attente"}{score != null ? ` · ${Math.round(score)}` : ""}</Pill>
+  <Pill className={`${levelTone(level)} ${level === "critique" ? "pulse-critical" : ""}`}>{prefix} {level ?? "en attente"}{score != null ? ` (${Math.round(score)})` : ""}</Pill>
 );
 
 export const ConfidenceBadge = ({ level, score }: { level: string | null | undefined; score?: number | null }) => (
-  <Pill className={confidenceTone(level)}>Confiance {level ?? "—"}{score != null ? ` · ${Math.round(score)}` : ""}</Pill>
+  <Pill className={confidenceTone(level)}>Confiance {level ?? "N/D"}{score != null ? ` (${Math.round(score)})` : ""}</Pill>
 );
 
 export const SeverityBadge = ({ severity }: { severity: string }) => <Pill className={levelTone(severity)}>{severity}</Pill>;
@@ -33,10 +33,10 @@ export const ResultStatusPill = ({ status }: { status: string }) => {
 };
 
 export const Unavailable = ({ reason }: { reason?: string | null }) => (
-  <span className="text-sm italic text-slate-500">{UNAVAILABLE}{reason ? ` — ${reason}` : ""}</span>
+  <span className="text-sm italic text-slate-500">{UNAVAILABLE}{reason ? `, ${reason}` : ""}</span>
 );
 
-export function Spinner({ label = "Chargement…" }: { label?: string }) {
+export function Spinner({ label = "Chargement..." }: { label?: string }) {
   return (
     <div className="flex items-center gap-3 p-6 text-sm text-slate-400">
       <span className="h-4 w-4 animate-spin rounded-full border-2 border-cyanx-400 border-t-transparent" />

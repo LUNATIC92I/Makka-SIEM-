@@ -28,7 +28,7 @@ def clean_text(value: str, max_len: int = 4000) -> str:
     value = unicodedata.normalize("NFKC", value)
     value = _CONTROL.sub("", value)
     if len(value) > max_len:
-        value = value[:max_len] + "…[tronqué]"
+        value = value[:max_len] + " [tronqué]"
     return value
 
 
@@ -57,7 +57,7 @@ def scan_structure(data: Any, path: str = "$", max_items: int = 5000) -> list[di
 def sanitize_structure(data: Any, max_str: int = 2000, depth: int = 0) -> Any:
     """Return a copy with cleaned strings and bounded depth/size."""
     if depth > 12:
-        return "…[profondeur max]"
+        return "[profondeur max]"
     if isinstance(data, dict):
         return {clean_text(str(k), 200): sanitize_structure(v, max_str, depth + 1) for k, v in list(data.items())[:500]}
     if isinstance(data, list):

@@ -15,7 +15,7 @@ from app.security.secrets_vault import masked
 
 MATURITY_LABELS = {
     "implemented-tested": "Implémenté et testé",
-    "implemented-mock-tested": "Implémenté — testé sur réponses simulées, non validé sur instance réelle",
+    "implemented-mock-tested": "Implémenté, testé sur réponses simulées, non validé sur instance réelle",
     "demo-synthetic": "Source synthétique (démonstration)",
 }
 
@@ -137,7 +137,7 @@ def connector_out(c: ConnectorConfig) -> dict[str, Any]:
     elif c.last_status == "error":
         state = "en erreur"
     else:
-        state = "activé — jamais testé"
+        state = "activé, jamais testé"
     return {"id": c.id, "kind": c.kind, "provider": c.provider, "name": c.name, "enabled": c.enabled,
             "settings": c.settings, "secrets": secrets, "poll_interval_seconds": c.poll_interval_seconds,
             "last_status": c.last_status, "last_error": c.last_error, "last_success_at": iso(c.last_success_at),

@@ -45,7 +45,7 @@ def validate_output(raw: Any, package: dict[str, Any]) -> tuple[AIAnalysisOutput
         if f.evidence_ids:
             facts.append(f)
         else:
-            issues.append(f"Fait sans preuve valide retiré : « {f.statement[:80]} »")
+            issues.append(f"Fait sans preuve valide retiré : {f.statement[:80]}")
     out.established_facts = facts
     for h in out.hypotheses:
         h.evidence_ids = check_ids(h.evidence_ids, "Hypothèse")
@@ -73,12 +73,12 @@ def validate_output(raw: Any, package: dict[str, Any]) -> tuple[AIAnalysisOutput
     for a in out.threat_actor_attribution:
         a.evidence_ids = check_ids(a.evidence_ids, "Attribution")
         if not set(a.evidence_ids) & ti_ids:
-            issues.append(f"Attribution « {a.actor[:60]} » retirée : aucune preuve de renseignement documentée "
+            issues.append(f"Attribution {a.actor[:60]} retirée : aucune preuve de renseignement documentée "
                           "(une adresse IP ou une géolocalisation ne suffit pas).")
             continue
         if a.confidence == "élevée" and len(set(a.evidence_ids) & ti_ids) < 2:
             a.confidence = "moyenne"
-            issues.append(f"Confiance de l'attribution « {a.actor[:60]} » abaissée (une seule source).")
+            issues.append(f"Confiance de l'attribution {a.actor[:60]} abaissée (une seule source).")
         attributions.append(a)
     out.threat_actor_attribution = attributions
     if attributions and not any("attribution" in lim.lower() for lim in out.limitations):
@@ -89,7 +89,7 @@ def validate_output(raw: Any, package: dict[str, Any]) -> tuple[AIAnalysisOutput
     for field in ("executive_summary", "initial_event"):
         value = getattr(out, field)
         if detect_injection(value):
-            issues.append(f"Contenu suspect (injection) détecté dans « {field} » : texte neutralisé.")
+            issues.append(f"Contenu suspect (injection) détecté dans {field} : texte neutralisé.")
             setattr(out, field, "[Contenu retiré : motif d'injection détecté]")
         else:
             setattr(out, field, clean_text(value, 4000))

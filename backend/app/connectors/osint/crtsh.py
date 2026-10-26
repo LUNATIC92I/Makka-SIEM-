@@ -1,4 +1,4 @@
-"""crt.sh — Certificate Transparency logs (publicly observable TLS certificates)."""
+"""crt.sh, Certificate Transparency logs (publicly observable TLS certificates)."""
 
 from __future__ import annotations
 

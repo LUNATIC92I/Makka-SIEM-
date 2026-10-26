@@ -205,7 +205,7 @@ async def test_connector(connector_id: int, body: TestIn, request: Request, db: 
             provider = CATALOG[row.provider](ProviderContext(row.settings or {}, decrypt_secrets(row.secret_ciphertext)))
             result = await provider.lookup(ind.type, ind.value)
             ok = result.status in ("ok", "no_data")
-            message = f"Statut : {result.status}" + (f" — {result.error_message}" if result.error_message else "")
+            message = f"Statut : {result.status}" + (f", {result.error_message}" if result.error_message else "")
         elif row.kind == "notification" and row.provider == "email":
             import asyncio as _asyncio
 

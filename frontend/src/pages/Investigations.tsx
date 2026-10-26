@@ -1,3 +1,4 @@
+import GlitchText from "../fx/GlitchText";
 import { ChangeEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, ConfidenceBadge, Empty, ErrorBox, LevelBadge, SeverityBadge, Spinner, SyntheticTag } from "../components/ui";
@@ -45,7 +46,7 @@ export default function InvestigationsPage() {
     const type = /^[0-9.]+$/.test(v) ? "ipv4" : v.includes(":") && !v.includes("/") ? "ipv6" : /^https?:\/\//i.test(v) ? "url"
       : /^[a-f0-9]{64}$/i.test(v) ? "sha256" : /^[a-f0-9]{40}$/i.test(v) ? "sha1" : /^[a-f0-9]{32}$/i.test(v) ? "md5" : "domain";
     try {
-      const inv = await api.post<InvestigationSummary>("/investigations", { title: `Investigation manuelle — ${v}`, indicators: [{ type, value: v }] });
+      const inv = await api.post<InvestigationSummary>("/investigations", { title: `Investigation manuelle, ${v}`, indicators: [{ type, value: v }] });
       nav(`/investigations/${inv.id}`);
     } catch (ex) { setErr(ex); }
   };
@@ -54,8 +55,8 @@ export default function InvestigationsPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Centre d'investigation</h1>
-          <p className="text-sm text-slate-400">{data?.total ?? "…"} investigation(s)</p>
+          <GlitchText className="text-2xl font-semibold text-slate-50">Centre d'investigation</GlitchText>
+          <p className="text-sm text-slate-400">{data?.total ?? "..."} investigation(s)</p>
         </div>
         {can("ingest:write") && (
           <div className="flex gap-2">
@@ -107,10 +108,10 @@ export default function InvestigationsPage() {
                 <tbody>
                   {data.items.map((i) => (
                     <tr key={i.id} className="cursor-pointer" onClick={() => nav(`/investigations/${i.id}`)}>
-                      <td className="mono whitespace-nowrap text-cyanx-300">{i.reference}{i.restricted && <span title="Accès restreint"> 🔒</span>}</td>
+                      <td className="mono whitespace-nowrap text-cyanx-300">{i.reference}{i.restricted && <span title="Accès restreint"> (restreinte)</span>}</td>
                       <td className="max-w-[380px]"><div className="truncate">{i.title}</div>{i.is_synthetic && <SyntheticTag />}</td>
-                      <td className="mono">{i.src_ip ?? "—"}<div className="text-xs text-slate-500">{i.source_system}</div></td>
-                      <td>{i.target ?? "—"}</td>
+                      <td className="mono">{i.src_ip ?? "N/D"}<div className="text-xs text-slate-500">{i.source_system}</div></td>
+                      <td>{i.target ?? "N/D"}</td>
                       <td><SeverityBadge severity={i.severity} /></td>
                       <td><LevelBadge level={i.risk_level} score={i.risk_score} /></td>
                       <td><ConfidenceBadge level={i.confidence_level} score={i.confidence_score} /></td>

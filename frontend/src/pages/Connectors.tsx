@@ -1,3 +1,4 @@
+import GlitchText from "../fx/GlitchText";
 import { useState } from "react";
 import { Card, Empty, ErrorBox, Pill, Spinner } from "../components/ui";
 import { useApi } from "../hooks/useApi";
@@ -26,8 +27,8 @@ export default function ConnectorsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-50">Connecteurs</h1>
-        <p className="text-sm text-slate-400">Un connecteur n'est déclaré « opérationnel » qu'après un test réussi ou une collecte réelle. Les secrets sont chiffrés (clé maîtresse hors base) et ne sont jamais réaffichés.</p>
+        <GlitchText className="text-2xl font-semibold text-slate-50">Connecteurs</GlitchText>
+        <p className="text-sm text-slate-400">Un connecteur n'est déclaré opérationnel qu'après un test réussi ou une collecte réelle. Les secrets sont chiffrés (clé maîtresse hors base) et ne sont jamais réaffichés.</p>
       </div>
       <ErrorBox error={error} />
       <Card title="SIEM">
@@ -42,7 +43,7 @@ export default function ConnectorsPage() {
         <div className="space-y-3">{list.filter((c) => c.kind === "osint").map((c) => <ConnectorRow key={c.id} c={c} editable={editable} onChange={reload} />)}</div>
       </Card>
       <Card title="Notifications">
-        <p className="mb-3 text-xs text-slate-500">Message envoyé lorsqu'une investigation atteint le seuil de risque (une seule fois par niveau). Contenu minimal : référence, titre, risque, confiance — jamais de données brutes. L'URL est chiffrée et soumise au contrôle anti-SSRF (HTTPS public uniquement).</p>
+        <p className="mb-3 text-xs text-slate-500">Message envoyé lorsqu'une investigation atteint le seuil de risque (une seule fois par niveau). Contenu minimal : référence, titre, risque, confiance, jamais de données brutes. L'URL est chiffrée et soumise au contrôle anti-SSRF (HTTPS public uniquement).</p>
         <div className="space-y-3">
           {list.filter((c) => c.kind === "notification").map((c) => <ConnectorRow key={c.id} c={c} editable={editable} onChange={reload} />)}
           {!list.some((c) => c.kind === "notification") && <Empty>Aucun canal de notification.</Empty>}
@@ -91,11 +92,11 @@ function ConnectorRow({ c, editable, onChange }: { c: Connector; editable: boole
     } catch (e) { setErr(e); }
   };
   const test = async () => {
-    setMsg("Test en cours…"); setErr(null);
+    setMsg("Test en cours..."); setErr(null);
     try {
       const type = testValue.includes(":") ? "ipv6" : /^[\d.]+$/.test(testValue) ? "ipv4" : "domain";
       const r = await api.post<{ ok: boolean; message: string }>(`/connectors/${c.id}/test`, { indicator_type: type, indicator_value: testValue });
-      setMsg((r.ok ? "✓ " : "✗ ") + r.message); onChange();
+      setMsg((r.ok ? "Succès : " : "Échec : ") + r.message); onChange();
     } catch (e) { setErr(e); setMsg(null); }
   };
 
@@ -116,9 +117,9 @@ function ConnectorRow({ c, editable, onChange }: { c: Connector; editable: boole
           <button className="btn-ghost" onClick={() => setOpen(!open)}>{open ? "Fermer" : "Configurer"}</button>
         </div>
       </div>
-      {c.description && <p className="mt-1 text-xs text-slate-500">{c.description} {c.maturity && <em className="text-slate-600">— {c.maturity}</em>}</p>}
+      {c.description && <p className="mt-1 text-xs text-slate-500">{c.description} {c.maturity && <em className="text-slate-600">({c.maturity})</em>}</p>}
       {c.last_error && <p className="mt-1 text-xs text-rose-300">Dernière erreur : {c.last_error}</p>}
-      {c.last_run_at && <p className="text-[11px] text-slate-500">Dernière exécution {fmtDate(c.last_run_at)} · dernier succès {fmtDate(c.last_success_at)}</p>}
+      {c.last_run_at && <p className="text-[11px] text-slate-500">Dernière exécution {fmtDate(c.last_run_at)}, dernier succès {fmtDate(c.last_success_at)}</p>}
       {open && (
         <div className="mt-3 grid gap-3 md:grid-cols-3">
           <FieldInputs schema={c.settings_schema ?? {}} values={settings} onChange={setSettings} />
@@ -131,7 +132,7 @@ function ConnectorRow({ c, editable, onChange }: { c: Connector; editable: boole
             {editable && <button className="btn-ghost" onClick={test}>Tester la connexion</button>}
             {editable && c.kind === "siem" && <button className="btn-ghost" onClick={async () => { await api.post(`/connectors/${c.id}/poll`); setMsg("Collecte planifiée."); }}>Collecter maintenant</button>}
             {editable && c.kind !== "osint" && <button className="btn-danger" onClick={async () => { if (confirm("Supprimer ce connecteur ?")) { await api.del(`/connectors/${c.id}`); onChange(); } }}>Supprimer</button>}
-            {c.terms_url && <a className="text-xs text-cyanx-400" href={c.terms_url} target="_blank" rel="noopener noreferrer">Conditions d'utilisation ↗</a>}
+            {c.terms_url && <a className="text-xs text-cyanx-400" href={c.terms_url} target="_blank" rel="noopener noreferrer">Conditions d'utilisation</a>}
           </div>
           {msg && <div className="md:col-span-3 text-sm text-slate-300">{msg}</div>}
           <div className="md:col-span-3"><ErrorBox error={err} /></div>
@@ -158,7 +159,7 @@ function NewSiem({ catalog, onCreated }: { catalog: Catalog; onCreated: () => vo
         <div><label className="label">Nom unique</label><input className="input w-56 mono" value={name} onChange={(e) => setName(e.target.value)} placeholder="ex. sentinel-prod" /></div>
         <button className="btn-primary" disabled={name.length < 2} onClick={create}>Créer</button>
       </div>
-      {meta && <p className="mt-2 text-xs text-slate-500">{meta.description} — <em>{meta.maturity}</em></p>}
+      {meta && <p className="mt-2 text-xs text-slate-500">{meta.description} <em>({meta.maturity})</em></p>}
       <ErrorBox error={err} />
     </div>
   );
@@ -185,7 +186,7 @@ function NewNotification({ catalog, onCreated }: { catalog: Catalog; onCreated: 
       <div className="flex flex-wrap items-end gap-2">
         <div><label className="label">Type</label><select className="input w-64" value={provider} onChange={(e) => setProvider(e.target.value)}>{catalog.notification.map((n) => <option key={n.provider} value={n.provider}>{n.display_name}</option>)}</select></div>
         <div><label className="label">Nom unique</label><input className="input w-48 mono" value={name} onChange={(e) => setName(e.target.value)} placeholder="ex. teams-soc" /></div>
-        {provider !== "email" && <div className="min-w-[280px] flex-1"><label className="label">URL du webhook (secret)</label><input className="input mono" type="password" autoComplete="off" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" /></div>}
+        {provider !== "email" && <div className="min-w-[280px] flex-1"><label className="label">URL du webhook (secret)</label><input className="input mono" type="password" autoComplete="off" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." /></div>}
         <div><label className="label">Seuil</label><select className="input w-32" value={level} onChange={(e) => setLevel(e.target.value)}>{["modéré", "élevé", "critique"].map((l) => <option key={l}>{l}</option>)}</select></div>
         <button className="btn-primary" disabled={name.length < 2 || (provider !== "email" && !url.startsWith("https://"))} onClick={create}>Créer</button>
       </div>

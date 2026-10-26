@@ -63,3 +63,13 @@
 * Une résolution DNS ou un certificat partagé indiquent une relation d'infrastructure, pas une participation à
   l'attaque.
 * Toute action opérationnelle (blocage, isolation) reste une décision humaine.
+
+## Habillage visuel
+
+L'interface adopte un habillage inspiré des films de hacking : pluie de caractères en arrière-plan, effet d'écran
+cathodique (lignes de balayage, vignettage, faisceau), titres à effet de parasitage, séquence de démarrage tapée sur
+l'écran de connexion, radar de surveillance, flux hexadécimal et horloge UTC en tête d'écran, cadres néon.
+
+Ces effets sont purement décoratifs : ils ne captent aucun clic et ne masquent aucune donnée. Le bouton
+**Effets visuels** (en bas du menu) les active ou les désactive, le choix étant mémorisé sur le poste. Ils sont
+désactivés par défaut si Windows est réglé pour réduire les animations.

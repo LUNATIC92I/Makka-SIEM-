@@ -1,4 +1,4 @@
-"""RIPEstat Data API — BGP routing: announcing ASN, prefix and AS holder (all RIRs)."""
+"""RIPEstat Data API, BGP routing: announcing ASN, prefix and AS holder (all RIRs)."""
 
 from __future__ import annotations
 

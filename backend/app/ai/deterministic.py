@@ -47,7 +47,7 @@ class DeterministicProvider(AIProvider):
         first = events[0] if events else {}
         target = first.get("target_host") or first.get("dst_ip") or "cible non précisée"
         initial = (
-            f"Le SIEM {first.get('source_system', '?')} a enregistré « {first.get('title', '')} » "
+            f"Le SIEM {first.get('source_system', '?')} a enregistré {first.get('title', '')} "
             f"(type : {first.get('event_type', '?')}, sévérité : {first.get('severity', '?')}) le {first.get('time_utc') or 'horodatage inconnu'} "
             f"depuis {first.get('src_ip') or 'source inconnue'} vers {target}"
             + (f", port {first.get('dst_port')}/{first.get('protocol') or '?'}" if first.get("dst_port") else "")
@@ -57,7 +57,7 @@ class DeterministicProvider(AIProvider):
         if len(events) > 1:
             initial += f" {len(events) - 1} autre(s) événement(s) corrélé(s) à cette investigation."
 
-        facts = [{"statement": f"Événement {e['id']} : « {e['title']} » ({e['severity']}) à {e['time_utc'] or 'heure inconnue'} "
+        facts = [{"statement": f"Événement {e['id']} : {e['title']} ({e['severity']}) à {e['time_utc'] or 'heure inconnue'} "
                                f"depuis {e['src_ip'] or '?'} vers {e.get('target_host') or e.get('dst_ip') or '?'}.",
                   "evidence_ids": [e["id"]]} for e in events]
         facts += [{"statement": f["statement"], "evidence_ids": f["evidence_ids"]}
@@ -95,9 +95,9 @@ class DeterministicProvider(AIProvider):
              "rationale": "Le seuil ou la logique de la règle SIEM peut produire des alertes non pertinentes."},
         ]
         missing = list(corr.get("missing", [])) + [
-            f"{e['source']} : {e['status']} — {e['message']}" for e in corr.get("collection_errors", [])
+            f"{e['source']} : {e['status']}, {e['message']}" for e in corr.get("collection_errors", [])
         ][:30]
-        contradictions = [{"description": f"{c['indicator']} — {c['dimension']} : {c['description']}",
+        contradictions = [{"description": f"{c['indicator']}, {c['dimension']} : {c['description']}",
                            "evidence_ids": c.get("evidence_ids", [])} for c in corr.get("contradictions", [])]
         risk_level, conf_level = scoring.get("risk_level") or "indéterminé", scoring.get("confidence_level") or "faible"
         factors = scoring.get("risk_factors") or []
@@ -126,7 +126,7 @@ class DeterministicProvider(AIProvider):
             limitations.insert(0, "DONNÉES DE DÉMONSTRATION : les résultats sont synthétiques et sans valeur opérationnelle.")
         summary = (
             f"{'[DÉMONSTRATION] ' if synthetic else ''}{initial} Le moteur de scoring estime un risque {risk_level} "
-            f"({scoring.get('risk_score', '—')}/100) avec une confiance {conf_level} ({scoring.get('confidence_score', '—')}/100). "
+            f"({scoring.get('risk_score', 'N/D')}/100) avec une confiance {conf_level} ({scoring.get('confidence_score', 'N/D')}/100). "
             f"{len(ok)} résultat(s) OSINT exploitable(s) sur {len(results)} requête(s)"
             + (f", {len(contradictions)} contradiction(s)" if contradictions else "") + "."
         )
@@ -134,9 +134,9 @@ class DeterministicProvider(AIProvider):
             "executive_summary": summary,
             "initial_event": initial,
             "observed_indicators": [{"indicator": i["value"], "type": i["type"],
-                                     "note": f"rôle : {i['role']} — {i.get('scope_note') or i['scope']}"} for i in package["indicators"]],
+                                     "note": f"rôle : {i['role']}, {i.get('scope_note') or i['scope']}"} for i in package["indicators"]],
             "osint_results": [{"source": r["source"],
-                               "summary": f"{r['status']}" + (f" — {r['error']}" if r.get("error") else ""),
+                               "summary": f"{r['status']}" + (f", {r['error']}" if r.get("error") else ""),
                                "evidence_ids": [r["id"]]} for r in results],
             "established_facts": facts,
             "hypotheses": hypotheses,
@@ -145,7 +145,7 @@ class DeterministicProvider(AIProvider):
             "alternative_hypotheses": alternatives,
             "mitre_attack": mitre,
             "estimated_risk": {"level": risk_level, "rationale": "Facteurs principaux : " + (
-                "; ".join(f"{f['label']} ({f['contribution']} pts) — {f['rationale']}" for f in top) or "aucun facteur documenté")},
+                "; ".join(f"{f['label']} ({f['contribution']} pts), {f['rationale']}" for f in top) or "aucun facteur documenté")},
             "confidence": {"level": conf_level, "rationale": "; ".join(
                 c.get("rationale", "") for c in (package.get("scoring") or {}).get("confidence_factors", []) or []) or
                 "Voir la décomposition du score de confiance."},

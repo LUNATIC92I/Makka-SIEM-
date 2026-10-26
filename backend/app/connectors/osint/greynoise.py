@@ -1,4 +1,4 @@
-"""GreyNoise Community API — Internet background noise / known benign services."""
+"""GreyNoise Community API, Internet background noise / known benign services."""
 
 from __future__ import annotations
 

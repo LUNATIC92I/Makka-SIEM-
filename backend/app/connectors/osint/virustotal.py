@@ -1,4 +1,4 @@
-"""VirusTotal API v3 — multi-engine reputation (aggregator: overlaps other feeds)."""
+"""VirusTotal API v3, multi-engine reputation (aggregator: overlaps other feeds)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""RDAP (Registration Data Access Protocol) — registration of IP blocks and domains.
+"""RDAP (Registration Data Access Protocol), registration of IP blocks and domains.
 
 Uses the rdap.org bootstrap redirector, which forwards to the authoritative RIR /
 registry. Only organisation-level entities are kept: personal contact data
@@ -71,7 +71,7 @@ class RdapProvider(OsintProvider):
             return self._result(
                 ind_type, value, "no_data", raw=body or None, reference_url=str(resp.url),
                 error_message=f"Le registre a répondu 404{f' ({detail})' if detail else ''} : absence d'enregistrement "
-                              "ou indisponibilité temporaire du registre — à revérifier.",
+                              "ou indisponibilité temporaire du registre, à revérifier.",
             )
         if resp.status_code >= 400:
             raise ConnectorError(f"Requête RDAP refusée (HTTP {resp.status_code})", status_code=resp.status_code)

@@ -36,7 +36,7 @@ class _Demo(OsintProvider):
     reliability = 0.6
 
     def _ok(self, t: str, v: str, findings: Findings, **kw) -> ProviderResult:  # noqa: ANN003
-        findings.notes.insert(0, f"{DEMO_LABEL} — générée localement, aucune source réelle interrogée.")
+        findings.notes.insert(0, f"{DEMO_LABEL}, générée localement, aucune source réelle interrogée.")
         return self._result(t, v, "ok", findings=findings, raw={"synthetic": True, "label": DEMO_LABEL},
                             reference_url=None, source_confidence="synthétique", **kw)
 
@@ -76,7 +76,7 @@ class _DemoGeo(_Demo):
             country=f"Pays synthétique {self.country_code}", country_code=self.country_code,
             region="Région de démonstration", city=None, latitude=round(lat, 2), longitude=round(lon, 2),
             accuracy_radius_km=float(100 + h % 400),
-            precision_note="Coordonnées fictives (océan) — démonstration uniquement.",
+            precision_note="Coordonnées fictives (océan), démonstration uniquement.",
         )))
 
 
@@ -109,7 +109,7 @@ class _DemoRep(_Demo):
             verdict=verdict, score=score, raw_score=f"{int(score)}/100 (synthétique)", report_count=h % 40,
             last_reported_at=utc_now() - timedelta(days=h % 120),
             categories=["demo-bruteforce"] if verdict != "unknown" else [],
-            explanation="Score synthétique dérivé d'un hachage — sans valeur de renseignement.",
+            explanation="Score synthétique dérivé d'un hachage, sans valeur de renseignement.",
         )), data_updated_at=utc_now() - timedelta(days=h % 120))
 
 

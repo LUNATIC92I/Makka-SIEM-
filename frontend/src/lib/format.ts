@@ -1,12 +1,12 @@
 export const fmtDate = (iso: string | null | undefined): string => {
-  if (!iso) return "—";
+  if (!iso) return "N/D";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toISOString().replace("T", " ").replace(/\.\d+Z$/, "Z").replace(/:\d\dZ$/, (m) => m);
 };
 
 export const fmtRelative = (iso: string | null | undefined): string => {
-  if (!iso) return "—";
+  if (!iso) return "N/D";
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
   if (diff < 60) return "à l'instant";
   if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`;
@@ -15,8 +15,8 @@ export const fmtRelative = (iso: string | null | undefined): string => {
 };
 
 export const STATUS_LABELS: Record<string, string> = {
-  new: "Nouvelle", in_progress: "En cours", pending_review: "En revue", closed_true_positive: "Clôturée — vrai positif",
-  closed_false_positive: "Clôturée — faux positif", closed_benign: "Clôturée — bénigne",
+  new: "Nouvelle", in_progress: "En cours", pending_review: "En revue", closed_true_positive: "Clôturée, vrai positif",
+  closed_false_positive: "Clôturée, faux positif", closed_benign: "Clôturée, bénigne",
 };
 
 export const RESULT_STATUS: Record<string, { label: string; tone: string }> = {
