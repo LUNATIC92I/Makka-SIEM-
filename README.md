@@ -16,7 +16,7 @@ rapports PDF / JSON avec empreinte SHA-256 → journal d'audit chaîné.
 cd backend
 python -m venv .venv && . .venv/bin/activate          # Windows : .venv\Scripts\activate
 pip install -r requirements-dev.txt
-python -m pytest -q                                     # 138 tests
+python -m pytest -q                                     # 143 tests
 python -m app.run --port 8765                           # http://127.0.0.1:8765 (API)
 
 # Frontend (Node 22)

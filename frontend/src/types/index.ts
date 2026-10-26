@@ -35,7 +35,7 @@ export interface EnrichmentResult {
   category: string | null; upstream_group: string | null; reliability: number | null; status: string; queried_at: string;
   data_updated_at: string | null; duration_ms: number | null; findings: Findings; reference_url: string | null;
   source_confidence: string | null; error_message: string | null; raw_sha256: string | null; is_synthetic: boolean;
-  raw?: unknown;
+  raw?: unknown; run_number: number; superseded_at: string | null;
 }
 export interface Relation {
   id: number; from_kind: string; from_value: string; to_kind: string; to_value: string; relation_type: string;
@@ -80,7 +80,7 @@ export interface InvestigationDetail extends InvestigationSummary {
   events: SiemEvent[]; indicators: IndicatorLink[]; results: EnrichmentResult[]; relations: Relation[];
   correlation: Correlation; scoring: Scoring; analysis: Analysis | null;
   analyses: { id: number; provider: string; status: string; created_at: string }[];
-  notes: Note[]; reports: Report[]; timeline: TimelineItem[];
+  notes: Note[]; reports: Report[]; timeline: TimelineItem[]; enrichment_runs: number; superseded_results: number;
 }
 export interface Connector {
   id: number; kind: string; provider: string; name: string; enabled: boolean; settings: Record<string, unknown>;

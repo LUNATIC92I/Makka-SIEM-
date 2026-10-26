@@ -14,6 +14,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # Importing handlers registers them in the task registry.
 import app.investigation.pipeline  # noqa: F401
+import app.services.notifications  # noqa: F401
 import app.services.retention  # noqa: F401
 from app.api.routes import auth, connectors, events, intel, investigations, operations, reports, users
 from app.core.config import APP_VERSION, get_settings

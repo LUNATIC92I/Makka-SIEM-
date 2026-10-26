@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "node e2e/ui-smoke.mjs"
   },
   "dependencies": {
     "cytoscape": "3.34.4",
@@ -32,6 +33,7 @@
     "tailwindcss": "3.4.19",
     "typescript": "5.9.3",
     "vite": "6.4.5",
-    "vitest": "3.2.7"
+    "vitest": "3.2.7",
+    "playwright": "1.63.0"
   }
 }

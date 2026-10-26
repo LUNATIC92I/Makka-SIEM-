@@ -70,6 +70,7 @@ def result_out(r: EnrichmentResult, with_raw: bool = False) -> dict[str, Any]:
         "reference_url": r.reference_url, "source_confidence": r.source_confidence,
         "error_message": r.error_message or (None if r.status == "ok" else "Donnée indisponible"),
         "access_notes": r.access_notes, "raw_sha256": r.raw_sha256, "is_synthetic": r.is_synthetic,
+        "run_number": r.run_number, "superseded_at": iso(r.superseded_at),
     }
     if with_raw:
         d["raw"] = r.raw
@@ -118,6 +119,11 @@ def connector_out(c: ConnectorConfig) -> dict[str, Any]:
         cls = SIEM_CONNECTORS[c.provider]
         meta = {"display_name": cls.display_name, "description": cls.description, "secret_fields": cls.secret_fields,
                 "settings_schema": cls.settings_schema, "maturity": MATURITY_LABELS.get(cls.maturity, cls.maturity)}
+    elif c.kind == "notification":
+        from app.services.notifications import PROVIDERS, SECRET_FIELDS, SETTINGS_SCHEMA
+
+        meta = {"display_name": PROVIDERS.get(c.provider, c.provider), "settings_schema": SETTINGS_SCHEMA,
+                "secret_fields": SECRET_FIELDS, "description": "Notification sortante au franchissement d'un seuil de risque."}
     secrets = masked(c.secret_ciphertext)
     # "operational" only when configured, enabled and the last real run succeeded.
     if not c.enabled:

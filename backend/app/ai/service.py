@@ -12,6 +12,7 @@ from app.ai.providers import AIConfig, build_provider
 from app.ai.validation import validate_output
 from app.core.config import get_settings
 from app.core.errors import ConnectorError
+from app.investigation.queries import current_results
 from app.models import AIAnalysis, ConnectorConfig, EnrichmentResult, Investigation, InvestigationIndicator
 from app.security.secrets_vault import decrypt_secrets
 from app.services import audit
@@ -43,7 +44,7 @@ async def run_analysis(db: Session, inv: Investigation, *, provider_override: st
                        user_id: int | None = None, actor: str = "system") -> AIAnalysis:
     cfg = resolve_ai_config(db, provider_override)
     links = list(db.scalars(select(InvestigationIndicator).where(InvestigationIndicator.investigation_id == inv.id)))
-    results = list(db.scalars(select(EnrichmentResult).where(EnrichmentResult.investigation_id == inv.id).order_by(EnrichmentResult.id)))
+    results = current_results(db, inv.id)
     record = AIAnalysis(investigation_id=inv.id, provider=cfg.provider, status="error", input_sha256="", created_by=user_id)
     if cfg.provider == "none":
         record.status, record.error_message = "disabled", "Analyse IA désactivée par la configuration."

@@ -46,7 +46,9 @@ export default function InvestigationDetailPage() {
             {inv.restricted && <Pill className="border-ink-500 text-slate-300">Accès restreint</Pill>}
           </div>
           <h1 className="mt-1 break-words text-xl font-semibold text-slate-50">{inv.title}</h1>
-          <p className="text-xs text-slate-500">Créée {fmtDate(inv.created_at)} · mise à jour {fmtDate(inv.updated_at)} · traitement : {inv.pipeline_status}</p>
+          <p className="text-xs text-slate-500">Créée {fmtDate(inv.created_at)} · mise à jour {fmtDate(inv.updated_at)} · traitement : {inv.pipeline_status}
+            {inv.enrichment_runs > 0 && ` · passe d'enrichissement n° ${inv.enrichment_runs}`}
+            {inv.superseded_results > 0 && ` (${inv.superseded_results} résultat(s) antérieur(s) conservé(s) dans l'historique Threat Intelligence)`}</p>
         </div>
         {can("investigations:write") && (
           <div className="flex flex-wrap items-center gap-2">

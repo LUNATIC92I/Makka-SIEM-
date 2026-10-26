@@ -53,7 +53,7 @@ export default function ThreatIntelPage() {
                 <ul className="max-h-[480px] space-y-2 overflow-auto">{detail.data.history.map((r) => (
                   <li key={r.id} className="rounded border border-ink-700 p-2">
                     <div className="flex items-center gap-2"><span className="text-slate-200">{r.source_display}</span><ResultStatusPill status={r.status} /></div>
-                    <div className="text-xs text-slate-500">consulté {fmtDate(r.queried_at)} · donnée du {fmtDate(r.data_updated_at)}</div>
+                    <div className="text-xs text-slate-500">consulté {fmtDate(r.queried_at)} · donnée du {fmtDate(r.data_updated_at)} · passe {r.run_number}{r.superseded_at ? " (remplacée)" : ""}</div>
                     {r.findings.reputation && <div className={`text-xs ${verdictTone(r.findings.reputation.verdict)}`}>{VERDICT_LABELS[r.findings.reputation.verdict]} {r.findings.reputation.raw_score}</div>}
                   </li>
                 ))}</ul>

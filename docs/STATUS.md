@@ -19,6 +19,10 @@
 * Authentification, RBAC, investigations restreintes, verrouillage, limitation de débit, coffre de secrets, SSRF,
   en-têtes de sécurité, audit chaîné et vérifiable, rétention.
 * File de tâches persistante (retries, temporisation, reprise après interruption) consultable.
+* Historique des enrichissements : chaque relance crée une nouvelle passe, les résultats antérieurs sont conservés
+  (marqués « remplacés ») et visibles dans l'historique Threat Intelligence et la chronologie.
+* Notifications (webhook JSON signé HMAC, Microsoft Teams, Slack) au franchissement d'un seuil de risque, une fois
+  par niveau, réémises en cas d'escalade ; URL chiffrée et contrôlée anti-SSRF ; données de démo exclues par défaut.
 * Mode actif (TCP) désactivé par défaut, restreint au périmètre autorisé.
 * Console SOC (8 pages + fiche d'investigation à 9 onglets).
 * Migrations Alembic, `.env.example`, spec PyInstaller, application Electron, script de build Windows, CI.
@@ -34,9 +38,7 @@ Ils sont couverts par des tests sur réponses simulées conformes aux API docume
 * **Exécutable Windows** : chaîne de build complète fournie et validée sous Linux ; le `.exe` doit être compilé sous
   Windows (non réalisé dans ce conteneur). Binaires non signés.
 * PostgreSQL : supporté par l'ORM, non testé.
-* Notifications : paramètre présent (`notifications`), envoi non implémenté.
 * Pas d'enrichissement récursif (les indicateurs associés sont relevés mais pas enrichis à leur tour).
-* Historique d'enrichissement : une relance remplace les résultats de l'investigation (l'audit conserve la trace).
 * Limitation de débit en mémoire (mono-processus).
 * Pas de mise à jour automatique (choix de sécurité tant que les binaires ne sont pas signés).
 * Le moteur déterministe n'est pas un LLM : il restitue les preuves avec des règles prudentes.
@@ -46,10 +48,10 @@ Ils sont couverts par des tests sur réponses simulées conformes aux API docume
 1. Validation des connecteurs sur des instances SIEM/TI réelles (Sentinel, Splunk, Elastic, Wazuh, Defender).
 2. Signature Authenticode et mise à jour automatique signée (`electron-updater`).
 3. Protection de la clé maîtresse par DPAPI / Windows Credential Manager.
-4. Notifications (webhook, e-mail, Teams) selon seuil de risque.
+4. Notifications par e-mail (SMTP) ; webhooks Teams/Slack non validés sur des espaces réels.
 5. Enrichissement de second niveau contrôlé (profondeur, budget de requêtes).
-6. Historisation des enrichissements successifs et comparaison dans le temps.
+6. Comparaison visuelle entre passes d'enrichissement (les données sont déjà historisées).
 7. DNS passif (sources sous licence), Censys, sources sectorielles (CERT, ISAC).
 8. Authentification SSO (OIDC/SAML) et MFA pour un déploiement multi-utilisateurs.
 9. Horodatage qualifié (RFC 3161) des rapports et export externe de l'empreinte d'audit.
-10. Tests de bout en bout de l'interface (Playwright) en CI et tests de charge.
+10. Tests de charge.

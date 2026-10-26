@@ -26,3 +26,27 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+  ui-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: pip install -r backend/requirements.txt
+      - working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+      - name: Start MAKKADi (demo mode)
+        working-directory: backend
+        run: |
+          MAKKADI_DATA_DIR="$RUNNER_TEMP/makkadi" nohup python -m app.run --port 8765 --static-dir ../frontend/dist > "$RUNNER_TEMP/server.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:8765/api/v1/health && break; sleep 1; done
+      - name: UI end-to-end test
+        working-directory: frontend
+        run: MAKKADI_URL=http://127.0.0.1:8765/ npm run e2e
+      - if: failure()
+        run: cat "$RUNNER_TEMP/server.log"

@@ -12,7 +12,7 @@ from collections import defaultdict
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.ai.service import run_analysis
@@ -25,6 +25,7 @@ from app.core.errors import ConnectorError
 from app.core.logging import get_logger
 from app.core.timeutil import utc_now
 from app.investigation.correlation import correlate
+from app.investigation.queries import current_results
 from app.models import (
     ConnectorConfig, EnrichmentResult, Indicator, IndicatorRelation, IngestionCheckpoint, Investigation,
     InvestigationIndicator, Task,
@@ -34,6 +35,7 @@ from app.security.secrets_vault import decrypt_secrets
 from app.services import audit
 from app.services.app_settings import get_setting
 from app.services.ingestion import ingest_events
+from app.services.notifications import maybe_notify
 from app.services.tasks import enqueue, handler
 
 log = get_logger("makkadi.pipeline")
@@ -64,20 +66,24 @@ async def run_investigation(db: Session, investigation_id: str, *, actor: str = 
     enrichable = {link.indicator_id: link.indicator for link in links if link.indicator.scope == "public"}
     providers = active_providers(db)
 
-    # 1. enrichment (replaces previous results for this investigation; history kept in audit)
-    db.execute(delete(IndicatorRelation).where(IndicatorRelation.investigation_id == inv.id))
-    db.execute(delete(EnrichmentResult).where(EnrichmentResult.investigation_id == inv.id))
+    # 1. enrichment — previous results are kept as history (superseded), relations are rebuilt
     pairs = await enrich(providers, list(enrichable.values()))
+    run_number = (inv.enrichment_runs or 0) + 1
+    db.execute(delete(IndicatorRelation).where(IndicatorRelation.investigation_id == inv.id))
+    db.execute(update(EnrichmentResult)
+               .where(EnrichmentResult.investigation_id == inv.id, EnrichmentResult.superseded_at.is_(None))
+               .values(superseded_at=utc_now()))
+    inv.enrichment_runs = run_number
     for ind, res in pairs:
         db.add(EnrichmentResult(
             investigation_id=inv.id, indicator_id=ind.id, source_name=res.source_name, status=res.status,
             queried_at=res.queried_at, data_updated_at=res.data_updated_at, duration_ms=res.duration_ms,
             findings=res.findings.model_dump(mode="json", exclude_none=True), raw=res.raw, raw_sha256=res.raw_sha256,
             reference_url=res.reference_url, source_confidence=res.source_confidence, error_message=res.error_message,
-            access_notes=res.access_notes, is_synthetic=res.is_synthetic,
+            access_notes=res.access_notes, is_synthetic=res.is_synthetic, run_number=run_number,
         ))
     db.flush()
-    results = list(db.scalars(select(EnrichmentResult).where(EnrichmentResult.investigation_id == inv.id).order_by(EnrichmentResult.id)))
+    results = current_results(db, inv.id)
 
     # 2. correlation
     scoring_cfg = get_setting(db, "scoring")
@@ -94,6 +100,7 @@ async def run_investigation(db: Session, investigation_id: str, *, actor: str = 
     inv.confidence_score, inv.confidence_level = scoring["confidence_score"], scoring["confidence_level"]
     errors = len(corr.collection_errors)
     inv.pipeline_status = "partial" if errors else "completed"
+    maybe_notify(db, inv)
     inv.updated_at = utc_now()
     db.flush()
     audit.record(db, "investigation.enriched", actor=actor, actor_user_id=user_id, target_type="investigation", target_id=inv.id,

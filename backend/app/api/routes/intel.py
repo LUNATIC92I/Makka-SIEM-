@@ -75,7 +75,8 @@ def indicator_detail(indicator_id: int, db: Session = DbDep, user: User = Depend
 def map_points(db: Session = DbDep, user: User = Depends(require("investigations:read")),
                investigation_id: str | None = Query(default=None, max_length=36), limit: int = Query(default=500, le=2000)) -> dict:
     visible = select(Investigation.id).where(visible_filter(user))
-    stmt = select(EnrichmentResult).where(EnrichmentResult.status == "ok", EnrichmentResult.investigation_id.in_(visible))
+    stmt = select(EnrichmentResult).where(EnrichmentResult.status == "ok", EnrichmentResult.superseded_at.is_(None),
+                                          EnrichmentResult.investigation_id.in_(visible))
     if investigation_id:
         stmt = stmt.where(EnrichmentResult.investigation_id == investigation_id)
     points = []

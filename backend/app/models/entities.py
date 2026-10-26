@@ -73,7 +73,7 @@ class User(Base):
 
 class ConnectorConfig(Base):
     __tablename__ = "connector_configs"
-    __table_args__ = (CheckConstraint("kind IN ('siem','osint','ai')", name="kind"),)
+    __table_args__ = (CheckConstraint("kind IN ('siem','osint','ai','notification')", name="kind"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     kind: Mapped[str] = mapped_column(String(16), index=True)
@@ -162,6 +162,8 @@ class Investigation(Base):
     scoring: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     correlation: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
+    enrichment_runs: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    notified_risk_level: Mapped[str | None] = mapped_column(String(16), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)
     closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
@@ -253,6 +255,9 @@ class EnrichmentResult(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     access_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
+    # History: results of earlier enrichment runs are kept, flagged as superseded.
+    run_number: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    superseded_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True, index=True)
 
     indicator: Mapped[Indicator] = relationship(lazy="joined")
 

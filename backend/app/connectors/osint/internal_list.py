@@ -7,11 +7,22 @@ Configured inline (``entries``) and/or from a local JSON/CSV file with columns
 from __future__ import annotations
 
 import csv
+import io
 import json
 from pathlib import Path
 from typing import Any
 
 from app.connectors.osint.base import Findings, OsintProvider, ProviderResult, Reputation
+
+def _decode(data: bytes) -> str:
+    """Files edited on Windows (Excel, Notepad) are often UTF-8 with BOM or cp1252."""
+    for encoding in ("utf-8-sig", "cp1252"):
+        try:
+            return data.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return data.decode("latin-1")
+
 
 _SCORES = {"malicious": 90.0, "suspicious": 55.0, "benign": 0.0, "unknown": None}
 
@@ -32,11 +43,11 @@ class InternalListProvider(OsintProvider):
         path = self.ctx.settings.get("file_path")
         if path and Path(path).is_file():
             p = Path(path)
+            text = _decode(p.read_bytes())
             if p.suffix.lower() == ".csv":
-                with p.open(encoding="utf-8") as fh:
-                    entries.extend(csv.DictReader(fh))
+                entries.extend(csv.DictReader(io.StringIO(text)))
             else:
-                entries.extend(json.loads(p.read_text(encoding="utf-8")))
+                entries.extend(json.loads(text))
         return entries
 
     async def _lookup(self, ind_type: str, value: str) -> ProviderResult:

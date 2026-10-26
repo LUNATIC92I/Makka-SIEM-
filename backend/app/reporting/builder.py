@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import APP_VERSION, get_settings
 from app.core.timeutil import iso, utc_now
+from app.investigation.queries import current_results
 from app.models import AIAnalysis, EnrichmentResult, IndicatorRelation, Investigation, InvestigationIndicator, InvestigationNote
 
 REPORT_SCHEMA_VERSION = "1.0"
@@ -39,7 +40,7 @@ def build_timeline(db: Session, inv: Investigation) -> list[dict[str, Any]]:
                       "label": f"Événement ingéré ({e.ingest_method})", "detail": e.original_id, "is_synthetic": e.is_synthetic})
     for r in db.scalars(select(EnrichmentResult).where(EnrichmentResult.investigation_id == inv.id)):
         items.append({"ts": iso(r.queried_at), "kind": "osint_query", "provenance": "third_party",
-                      "label": f"{r.source_name} : {r.status}", "detail": r.indicator.value, "is_synthetic": r.is_synthetic})
+                      "label": f"{r.source_name} : {r.status} (passe {r.run_number}{', remplacée' if r.superseded_at else ''})", "detail": r.indicator.value, "is_synthetic": r.is_synthetic})
     for a in db.scalars(select(AIAnalysis).where(AIAnalysis.investigation_id == inv.id)):
         items.append({"ts": iso(a.created_at), "kind": "ai_analysis", "provenance": "ai_generated",
                       "label": f"Analyse {a.provider} : {a.status}", "detail": a.model or "", "is_synthetic": False})
@@ -52,7 +53,7 @@ def build_timeline(db: Session, inv: Investigation) -> list[dict[str, Any]]:
 
 def build_report_data(db: Session, inv: Investigation, kind: str, generated_by: str) -> dict[str, Any]:
     links = list(db.scalars(select(InvestigationIndicator).where(InvestigationIndicator.investigation_id == inv.id)))
-    results = list(db.scalars(select(EnrichmentResult).where(EnrichmentResult.investigation_id == inv.id).order_by(EnrichmentResult.id)))
+    results = current_results(db, inv.id)
     relations = list(db.scalars(select(IndicatorRelation).where(IndicatorRelation.investigation_id == inv.id)))
     analysis = latest_analysis(db, inv.id)
     notes = list(db.scalars(select(InvestigationNote).where(InvestigationNote.investigation_id == inv.id).order_by(InvestigationNote.id)))

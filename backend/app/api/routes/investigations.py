@@ -13,6 +13,7 @@ from app.api.deps import DbDep, client_ip, has_perm, load_investigation, require
 from app.core.errors import ConnectorError, ValidationFailed
 from app.core.timeutil import iso, utc_now
 from app.investigation.pipeline import run_investigation
+from app.investigation.queries import current_results_stmt
 from app.models import (
     AIAnalysis, EnrichmentResult, Indicator, IndicatorRelation, Investigation, InvestigationAssignee, InvestigationEvent,
     InvestigationIndicator, InvestigationNote, Report, SiemEvent, User,
@@ -120,7 +121,9 @@ def create_manual(body: ManualInvestigation, request: Request, db: Session = DbD
 def get_investigation(investigation_id: str, db: Session = DbDep, user: User = Depends(require("investigations:read"))) -> dict:
     inv = load_investigation(db, user, investigation_id)
     links = db.scalars(select(InvestigationIndicator).where(InvestigationIndicator.investigation_id == inv.id))
-    results = db.scalars(select(EnrichmentResult).where(EnrichmentResult.investigation_id == inv.id).order_by(EnrichmentResult.id))
+    results = db.scalars(current_results_stmt(inv.id))
+    previous = db.scalar(select(func.count()).select_from(EnrichmentResult).where(
+        EnrichmentResult.investigation_id == inv.id, EnrichmentResult.superseded_at.is_not(None))) or 0
     relations = db.scalars(select(IndicatorRelation).where(IndicatorRelation.investigation_id == inv.id))
     analyses = list(db.scalars(select(AIAnalysis).where(AIAnalysis.investigation_id == inv.id).order_by(AIAnalysis.id.desc())))
     notes = db.scalars(select(InvestigationNote).where(InvestigationNote.investigation_id == inv.id).order_by(InvestigationNote.id))
@@ -132,6 +135,7 @@ def get_investigation(investigation_id: str, db: Session = DbDep, user: User = D
         "results": [result_out(r) for r in results],
         "relations": [relation_out(r) for r in relations],
         "correlation": inv.correlation, "scoring": inv.scoring,
+        "enrichment_runs": inv.enrichment_runs, "superseded_results": previous,
         "analysis": analysis_out(analyses[0]) if analyses else None,
         "analyses": [{"id": a.id, "provider": a.provider, "status": a.status, "created_at": iso(a.created_at)} for a in analyses],
         "notes": [note_out(n) for n in notes],

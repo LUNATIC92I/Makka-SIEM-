@@ -145,6 +145,10 @@ def test_misp_and_taxii_and_internal(env, mock_http, tmp_path):
     f.write_text(f"type,value,verdict,comment\nipv4,{IP},malicious,Bloqué par le SOC\n")
     assert lookup(InternalListProvider, settings={"file_path": str(f)}).findings.reputation.verdict == "malicious"
     assert lookup(InternalListProvider, v="8.8.8.8", settings={"file_path": str(f)}).status == "no_data"
+    for encoding in ("cp1252", "utf-8-sig"):  # fichiers produits par Excel / Bloc-notes sous Windows
+        f.write_text(f"type,value,verdict,comment\nipv4,{IP},suspicious,Signalé\n", encoding=encoding)
+        r = lookup(InternalListProvider, settings={"file_path": str(f)})
+        assert r.findings.reputation.verdict == "suspicious" and r.findings.reputation.explanation == "Signalé"
 
 
 def test_provider_crash_is_contained(env, mock_http):

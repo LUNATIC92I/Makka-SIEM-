@@ -10,6 +10,7 @@ interface Catalog {
   siem: { provider: string; display_name: string; description: string; settings_schema: Record<string, string>; secret_fields: string[]; maturity: string }[];
   osint: { provider: string; display_name: string }[];
   ai: { provider: string; display_name: string }[];
+  notification: { provider: string; display_name: string }[];
 }
 
 const stateTone = (s: string) => s.startsWith("opérationnel") ? "border-emerald-700 text-emerald-300" : s === "en erreur" ? "border-rose-700 text-rose-300"
@@ -39,6 +40,14 @@ export default function ConnectorsPage() {
       <Card title="Sources OSINT et Threat Intelligence">
         <p className="mb-3 text-xs text-slate-500">Activer une source revient à lui transmettre les indicateurs publics investigués. Respectez les conditions d'utilisation et quotas de chaque fournisseur.</p>
         <div className="space-y-3">{list.filter((c) => c.kind === "osint").map((c) => <ConnectorRow key={c.id} c={c} editable={editable} onChange={reload} />)}</div>
+      </Card>
+      <Card title="Notifications">
+        <p className="mb-3 text-xs text-slate-500">Message envoyé lorsqu'une investigation atteint le seuil de risque (une seule fois par niveau). Contenu minimal : référence, titre, risque, confiance — jamais de données brutes. L'URL est chiffrée et soumise au contrôle anti-SSRF (HTTPS public uniquement).</p>
+        <div className="space-y-3">
+          {list.filter((c) => c.kind === "notification").map((c) => <ConnectorRow key={c.id} c={c} editable={editable} onChange={reload} />)}
+          {!list.some((c) => c.kind === "notification") && <Empty>Aucun canal de notification.</Empty>}
+        </div>
+        {editable && catalog.data && <NewNotification catalog={catalog.data} onCreated={reload} />}
       </Card>
       <Card title="Fournisseur d'IA">
         <AISection list={list.filter((c) => c.kind === "ai")} editable={editable} onChange={reload} />
@@ -150,6 +159,34 @@ function NewSiem({ catalog, onCreated }: { catalog: Catalog; onCreated: () => vo
         <button className="btn-primary" disabled={name.length < 2} onClick={create}>Créer</button>
       </div>
       {meta && <p className="mt-2 text-xs text-slate-500">{meta.description} — <em>{meta.maturity}</em></p>}
+      <ErrorBox error={err} />
+    </div>
+  );
+}
+
+function NewNotification({ catalog, onCreated }: { catalog: Catalog; onCreated: () => void }) {
+  const [provider, setProvider] = useState(catalog.notification[0]?.provider ?? "webhook");
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [level, setLevel] = useState("élevé");
+  const [err, setErr] = useState<unknown>(null);
+  const create = async () => {
+    setErr(null);
+    try {
+      await api.post("/connectors", { kind: "notification", provider, name, enabled: true, settings: { min_risk_level: level, include_synthetic: "false" }, secrets: { url } });
+      setName(""); setUrl(""); onCreated();
+    } catch (e) { setErr(e); }
+  };
+  return (
+    <div className="mt-4 rounded-lg border border-dashed border-ink-600 p-3">
+      <div className="mb-2 text-sm font-medium text-slate-200">Ajouter un canal</div>
+      <div className="flex flex-wrap items-end gap-2">
+        <div><label className="label">Type</label><select className="input w-64" value={provider} onChange={(e) => setProvider(e.target.value)}>{catalog.notification.map((n) => <option key={n.provider} value={n.provider}>{n.display_name}</option>)}</select></div>
+        <div><label className="label">Nom unique</label><input className="input w-48 mono" value={name} onChange={(e) => setName(e.target.value)} placeholder="ex. teams-soc" /></div>
+        <div className="min-w-[280px] flex-1"><label className="label">URL du webhook (secret)</label><input className="input mono" type="password" autoComplete="off" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" /></div>
+        <div><label className="label">Seuil</label><select className="input w-32" value={level} onChange={(e) => setLevel(e.target.value)}>{["modéré", "élevé", "critique"].map((l) => <option key={l}>{l}</option>)}</select></div>
+        <button className="btn-primary" disabled={name.length < 2 || !url.startsWith("https://")} onClick={create}>Créer</button>
+      </div>
       <ErrorBox error={err} />
     </div>
   );

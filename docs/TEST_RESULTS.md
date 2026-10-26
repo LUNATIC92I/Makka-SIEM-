@@ -76,7 +76,21 @@ par le client HTTP, et URL de référence RDAP contenant des espaces.
 | `npm audit` (frontend, production) | 0 après mise à jour de `react-router-dom` 6 → 7.18.4 (GHSA-wrjc-x8rr-h8h6, GHSA-337j-9hxr-rhxg) |
 | `npm audit` (desktop) | 0 après mise à jour d'Electron 44.7.0 → 44.9.3 (GHSA-jr5w-w6x2-84p9) |
 
-## 7. Restant à tester
+## 7. Compléments (2026-10-26)
+
+* **CI GitHub Actions** (Ubuntu, Python 3.12) : jobs backend et frontend **réussis** sur la branche.
+* **Premier build sur runner Windows** (`windows-latest`) : 137/138 tests réussis ; l'échec a révélé un vrai défaut
+  Windows — un fichier de liste interne enregistré en cp1252 (Excel / Bloc-notes) n'était pas lu. Corrigé (UTF-8,
+  UTF-8 BOM puis cp1252) et couvert par un test.
+* Nouveaux tests : historisation des enrichissements, notifications (signature, envoi unique par niveau, format
+  Teams, données de démo exclues, SSRF sur l'URL, échec relancé et visible), migration 0002 appliquée sur une base
+  0001 contenant des données. Total backend : **143 réussis, 3 ignorés (live)**.
+* **Test E2E de l'interface** (`frontend/e2e/ui-smoke.mjs`, Playwright, application réelle en mode démo) :
+  **22/22 contrôles réussis** (connexion/premier démarrage, ingestion, pipeline, 6 onglets, avertissement de
+  géolocalisation, validation humaine, PDF + vérification d'intégrité, 6 pages, aucune erreur JavaScript). Ajouté
+  à la CI (job `ui-e2e`).
+
+## 8. Restant à tester
 
 * Connecteurs SIEM et OSINT à clé contre des **instances réelles** (Sentinel, Splunk, Elastic, Wazuh, Defender,
   VirusTotal, AbuseIPDB, OTX, URLhaus, MISP, TAXII) — aucun accès disponible.

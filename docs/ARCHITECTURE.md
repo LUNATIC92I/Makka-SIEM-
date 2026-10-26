@@ -83,7 +83,7 @@ docs/
 |---|---|---|
 | `roles` | id | nom unique, permissions (JSON) |
 | `users` | id | username unique, hash bcrypt, rôle (FK RESTRICT), verrouillage, `token_version` (révocation) |
-| `connector_configs` | id | `kind ∈ {siem, osint, ai}` (CHECK), nom unique, paramètres non secrets (JSON), **secrets chiffrés** (Fernet), état |
+| `connector_configs` | id | `kind ∈ {siem, osint, ai, notification}` (CHECK), nom unique, paramètres non secrets (JSON), **secrets chiffrés** (Fernet), état |
 | `ingestion_checkpoints` | connector_id (FK CASCADE) | curseur de collecte, avancé seulement après persistance |
 | `siem_events` | id | **UNIQUE (source_system, original_id)**, empreinte de contenu, brut assaini + SHA-256, index temps/IP |
 | `investigations` | uuid | référence unique `INV-AAAA-NNNNNN`, statut, risque/confiance, scoring et corrélation (JSON), `restricted` |
@@ -92,7 +92,7 @@ docs/
 | `indicators` | id | **UNIQUE (type, value)**, portée (public/privé/réservé…), classification |
 | `investigation_indicators` | (investigation, indicator, role) | rôle source/destination/observé, champ d'extraction, événement |
 | `osint_sources` | name | registre : catégorie, groupe d'amont (dépendance), fiabilité, clé requise, conditions |
-| `enrichment_results` | id | source, statut, `queried_at`, `data_updated_at`, résultats normalisés, brut + SHA-256, URL, erreurs, `is_synthetic` |
+| `enrichment_results` | id | numéro de passe, `superseded_at` (historique), source, statut, `queried_at`, `data_updated_at`, résultats normalisés, brut + SHA-256, URL, erreurs, `is_synthetic` |
 | `indicator_relations` | id | lien qualifié (type, source, date, temporalité, confiance, preuve FK) |
 | `ai_analyses` | id | fournisseur, modèle, statut, sortie validée, problèmes de validation, injections détectées, SHA-256 de l'entrée, envoi externe |
 | `reports` | id | type, format, fichier, SHA-256, taille |
@@ -102,7 +102,7 @@ docs/
 | `app_settings` | key | pondérations, seuils, règles d'ingestion, actifs, rétention |
 
 Toutes les dates sont stockées en UTC (`UTCDateTime`). Les clés étrangères sont actives sous SQLite (`PRAGMA
-foreign_keys=ON`). Migrations : `alembic upgrade head` (appliquées automatiquement au démarrage) ; un test vérifie
+foreign_keys=ON`). Migrations : `0001_initial_schema`, `0002_history_notifications` ; `alembic upgrade head` (appliquées automatiquement au démarrage, données conservées) ; un test vérifie
 que la migration correspond exactement au modèle et que `downgrade base` fonctionne.
 
 ## 5. Dépendances externes

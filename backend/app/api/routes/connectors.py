@@ -14,7 +14,9 @@ from app.connectors.osint.registry import CATALOG, REAL_PROVIDERS
 from app.connectors.siem.connectors import SIEM_CONNECTORS
 from app.core.errors import ConnectorError, OutboundBlocked
 from app.core.timeutil import utc_now
+from app.connectors.http import SafeHttpClient
 from app.investigation.pipeline import build_siem_connector
+from app.services.notifications import LEVELS, PROVIDERS as NOTIFY_PROVIDERS, SECRET_FIELDS as NOTIFY_SECRETS, SETTINGS_SCHEMA as NOTIFY_SCHEMA
 from app.models import ConnectorConfig, User
 from app.schemas.serializers import MATURITY_LABELS, connector_out
 from app.security.secrets_vault import SECRET_MASK, decrypt_secrets, encrypt_secrets
@@ -38,6 +40,8 @@ def catalog(_: User = Depends(require("connectors:read"))) -> dict:
                    "settings_schema": c.settings_schema, "terms_url": c.terms_url,
                    "maturity": MATURITY_LABELS.get(c.maturity, c.maturity)} for c in REAL_PROVIDERS],
         "ai": [{"provider": k, "display_name": v} for k, v in AI_PROVIDERS.items()],
+        "notification": [{"provider": k, "display_name": v, "settings_schema": NOTIFY_SCHEMA, "secret_fields": NOTIFY_SECRETS}
+                         for k, v in NOTIFY_PROVIDERS.items()],
     }
 
 
@@ -47,7 +51,7 @@ def list_connectors(db: Session = DbDep, _: User = Depends(require("connectors:r
 
 
 class ConnectorIn(BaseModel):
-    kind: Literal["siem", "osint", "ai"]
+    kind: Literal["siem", "osint", "ai", "notification"]
     provider: str = Field(max_length=64)
     name: str = Field(pattern=r"^[a-zA-Z0-9_.-]{2,100}$")
     enabled: bool = False
@@ -64,7 +68,8 @@ class ConnectorPatch(BaseModel):
 
 
 def _validate(kind: str, provider: str, settings: dict[str, Any]) -> None:
-    valid = {"siem": SIEM_CONNECTORS, "osint": {p.name: p for p in REAL_PROVIDERS}, "ai": AI_PROVIDERS}[kind]
+    valid = {"siem": SIEM_CONNECTORS, "osint": {p.name: p for p in REAL_PROVIDERS}, "ai": AI_PROVIDERS,
+             "notification": NOTIFY_PROVIDERS}[kind]
     if provider not in valid:
         raise HTTPException(422, f"Fournisseur inconnu pour {kind} : {provider}")
     for key in URL_KEYS:
@@ -78,6 +83,17 @@ def _validate(kind: str, provider: str, settings: dict[str, Any]) -> None:
                 raise HTTPException(422, f"URL refusée ({key}) : {exc}") from exc
     if len(str(settings)) > 50_000:
         raise HTTPException(422, "Paramètres trop volumineux")
+    if kind == "notification" and settings.get("min_risk_level") not in (None, "", *LEVELS):
+        raise HTTPException(422, "Seuil de risque invalide")
+
+
+def _validate_secret_url(kind: str, secrets: dict[str, str] | None) -> None:
+    url = (secrets or {}).get("url")
+    if kind == "notification" and url and url != SECRET_MASK:
+        try:
+            validate_outbound_url(url)
+        except OutboundBlocked as exc:
+            raise HTTPException(422, f"URL de webhook refusée : {exc}") from exc
 
 
 def _merge_secrets(existing: str | None, incoming: dict[str, str] | None) -> str | None:
@@ -97,6 +113,7 @@ def _merge_secrets(existing: str | None, incoming: dict[str, str] | None) -> str
 @router.post("", status_code=201)
 def create_connector(body: ConnectorIn, request: Request, db: Session = DbDep, user: User = Depends(require("connectors:write"))) -> dict:
     _validate(body.kind, body.provider, body.settings)
+    _validate_secret_url(body.kind, body.secrets)
     if db.scalars(select(ConnectorConfig).where(ConnectorConfig.name == body.name)).first():
         raise HTTPException(409, "Nom déjà utilisé")
     if body.kind == "ai" and body.enabled:
@@ -125,6 +142,7 @@ def update_connector(connector_id: int, body: ConnectorPatch, request: Request, 
         row.settings = body.settings
         changes["settings"] = sorted(body.settings)
     if body.secrets is not None:
+        _validate_secret_url(row.kind, body.secrets)
         row.secret_ciphertext = _merge_secrets(row.secret_ciphertext, body.secrets)
         changes["secrets_updated"] = sorted(k for k, v in body.secrets.items() if v != SECRET_MASK)
     if body.poll_interval_seconds is not None:
@@ -181,6 +199,15 @@ async def test_connector(connector_id: int, body: TestIn, request: Request, db: 
             result = await provider.lookup(ind.type, ind.value)
             ok = result.status in ("ok", "no_data")
             message = f"Statut : {result.status}" + (f" — {result.error_message}" if result.error_message else "")
+        elif row.kind == "notification":
+            secrets = decrypt_secrets(row.secret_ciphertext)
+            if not secrets.get("url"):
+                raise ConnectorError("URL du webhook non configurée")
+            payload = {"text": "MAKKADi : message de test (aucune donnée d'investigation)."} if row.provider != "webhook" \
+                else {"type": "test", "application": "MAKKADi"}
+            resp = await SafeHttpClient().request("POST", secrets["url"], json=payload)
+            ok = resp.status_code < 400
+            message = f"Webhook : HTTP {resp.status_code}"
         else:
             message = "Le fournisseur IA est testé lors d'une analyse (aucune donnée envoyée ici)."
             ok = row.provider == "deterministic"

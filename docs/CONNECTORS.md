@@ -102,6 +102,18 @@ Règles d'interprétation intégrées :
 * relations DNS/certificats qualifiées **actuelles** ou **historiques** et jamais présentées comme preuve d'attaque ;
 * TAXII 2.1 ne permettant pas de filtrer par valeur, la collection est mise en cache (bornée) et filtrée localement.
 
+## Notifications
+
+| Canal | Format | Sécurité |
+|---|---|---|
+| Webhook JSON générique | `{"type": "investigation.risk_threshold", reference, title, risk_level, risk_score, confidence_level, confidence_score, severity, source_ip, event_count, synthetic_data, created_at, sent_at}` | signé `X-Makkadi-Signature` (HMAC-SHA256, secret `webhook_secret`) comme les webhooks entrants |
+| Microsoft Teams | `{"text": …}` (webhook entrant / Workflows) | URL secrète chiffrée |
+| Slack | `{"text": …}` (Incoming Webhook) | URL secrète chiffrée |
+
+Paramètres : `min_risk_level` (défaut `élevé`), `include_synthetic` (défaut `false`). Une notification par
+investigation et par niveau ; une nouvelle est envoyée si le risque s'aggrave. Les échecs sont relancés par la file
+de tâches et visibles sur le connecteur. Maturité : implémenté, testé sur réponses simulées.
+
 ## Sources de démonstration
 
 `demo_network`, `demo_geo_a`, `demo_geo_b`, `demo_reputation_a`, `demo_reputation_mirror`, `demo_reputation_b`,
