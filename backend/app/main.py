@@ -22,6 +22,7 @@ from app.core.logging import configure_logging, get_logger
 from app.database.migrate import upgrade_to_head
 from app.database.session import SessionLocal, init_engine
 from app.investigation.pipeline import scheduler_loop
+from app.security.keys import jwt_secret, master_key
 from app.security.ratelimit import limiter
 from app.services.bootstrap import bootstrap
 from app.services.tasks import recover_interrupted, worker_loop
@@ -34,6 +35,8 @@ API_PREFIX = "/api/v1"
 async def lifespan(app: FastAPI):  # noqa: ANN201
     s = get_settings()
     s.ensure_dirs()
+    master_key(s)  # create/unlock key material at startup (DPAPI on Windows): fail early, not on first use
+    jwt_secret(s)
     init_engine()
     upgrade_to_head(s.resolved_database_url)
     with SessionLocal() as db:

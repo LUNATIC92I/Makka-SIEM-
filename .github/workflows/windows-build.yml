@@ -26,7 +26,6 @@ jobs:
         run: |
           $exe = Get-ChildItem desktop/dist/win-unpacked -Filter MAKKADi.exe | Select-Object -First 1
           if (-not $exe) { throw "MAKKADi.exe introuvable" }
-          $env:APPDATA = Join-Path $env:RUNNER_TEMP "appdata"
           $p = Start-Process -FilePath $exe.FullName -ArgumentList "--remote-debugging-port=9333" -PassThru
           $ok = $false
           for ($i = 0; $i -lt 90; $i++) {
@@ -44,7 +43,12 @@ jobs:
           }
           Get-Process | Where-Object { $_.ProcessName -in @("MAKKADi", "makkadi-backend") } | Stop-Process -Force -ErrorAction SilentlyContinue
           if (-not $ok) { throw "MAKKADi.exe n'a pas affiché l'interface" }
-          Get-ChildItem (Join-Path $env:APPDATA "MAKKADi\data") | Format-Table Name, Length
+          # Electron resolves %APPDATA% through the Windows API (not the environment variable).
+          $data = Join-Path ([Environment]::GetFolderPath("ApplicationData")) "MAKKADi\data"
+          Get-ChildItem $data -ErrorAction Stop | Format-Table Name, Length
+          if (-not (Test-Path (Join-Path $data "master.key.dpapi"))) { throw "Clé maîtresse non protégée par DPAPI" }
+          if (Test-Path (Join-Path $data "master.key")) { throw "Clé maîtresse en clair présente" }
+          Write-Host "Clés locales protégées par DPAPI : OK"
       - uses: actions/upload-artifact@v4
         with:
           name: makkadi-windows
