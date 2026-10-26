@@ -36,7 +36,7 @@ jobs:
               if ($page) {
                 $base = ([Uri]$page[0].url).GetLeftPart("Authority")
                 $health = Invoke-RestMethod "$base/api/v1/health" -TimeoutSec 3
-                Write-Host "Fenêtre chargée : $($page[0].url) — backend $($health.app_name) $($health.version) demo=$($health.demo_mode)"
+                Write-Host "Fenêtre chargée : $($page[0].url), backend $($health.app_name) $($health.version) demo=$($health.demo_mode)"
                 $ok = $true; break
               }
             } catch { }

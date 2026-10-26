@@ -72,11 +72,11 @@ Workflow `.github/workflows/windows-build.yml` : *Actions → Windows build (.ex
 | Lancement de `MAKKADi.exe` | backend embarqué démarré sur un port local libre, fenêtre « MAKKADi » chargée (`http://127.0.0.1:54423/`), santé OK |
 | Données utilisateur | `%APPDATA%\MAKKADi\data` contient `master.key.dpapi` et `jwt.key.dpapi`, aucune clé en clair |
 
-Build le plus récent vérifié (exécution 40253530668, commit `d11819a`, même test de fumée réussi) :
+Build le plus récent vérifié (exécution 40263419406, commit `98771bc`, habillage animé, même test de fumée réussi) :
 
 ```
-ec1caef50020b65f8ad190dde2fda169648cf58d64c9c3a5364a807dd6ee8e8d  MAKKADi-Setup-0.1.0-x64.exe
-51c38f7635744fe287a854f2bff3587ca12ecaef96ed979fc1045ca58d354ab2  MAKKADi-Portable-0.1.0-x64.exe
+b74b008f78113a1f44fe9100c1cfac7b04511e50aa568ecc4478e87d0992d663  MAKKADi-Setup-0.1.0-x64.exe
+6a70a8ad6e3f9f5066e451e051ad5be1005c39fff86babb7d24ded71df1adb89  MAKKADi-Portable-0.1.0-x64.exe
 ```
 
 (Les builds ne sont pas reproductibles octet pour octet : chaque exécution produit des empreintes différentes, à
