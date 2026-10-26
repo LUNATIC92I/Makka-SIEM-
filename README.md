@@ -16,7 +16,7 @@ rapports PDF / JSON avec empreinte SHA-256 → journal d'audit chaîné.
 cd backend
 python -m venv .venv && . .venv/bin/activate          # Windows : .venv\Scripts\activate
 pip install -r requirements-dev.txt
-python -m pytest -q                                     # 143 tests
+python -m pytest -q                                     # 150 tests (dont 4 conditionnels : live, Windows)
 python -m app.run --port 8765                           # http://127.0.0.1:8765 (API)
 
 # Frontend (Node 22)
@@ -32,14 +32,16 @@ local). En **mode démonstration** (activé par défaut), le bouton « Charger l
 
 ## Exécutable Windows
 
-Le `.exe` se compile **sous Windows** (PyInstaller ne fait pas de compilation croisée) :
+L'installateur `MAKKADi-Setup-<version>-x64.exe` et la version portable sont **produits et testés automatiquement sur
+un runner Windows** (workflow « Windows build (.exe) », artefact `makkadi-windows` ; voir
+[docs/WINDOWS_BUILD.md](docs/WINDOWS_BUILD.md)). Pour compiler soi-même **sous Windows** (PyInstaller ne fait pas de
+compilation croisée) :
 
 ```powershell
 .\scripts\build_windows.ps1        # tests + frontend + backend PyInstaller + installateur Electron (NSIS) et portable
 ```
 
-ou via le workflow GitHub Actions **« Windows build (.exe) »** (`.github/workflows/windows-build.yml`, exécution
-manuelle ou tag `v*`). Détails : [docs/WINDOWS_BUILD.md](docs/WINDOWS_BUILD.md).
+Binaires non signés (avertissement SmartScreen) : prévoir une signature Authenticode avant diffusion.
 
 ## Architecture
 

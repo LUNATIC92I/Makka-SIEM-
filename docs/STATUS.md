@@ -38,8 +38,8 @@ Ils sont couverts par des tests sur réponses simulées conformes aux API docume
 
 ## Partiel / limites connues
 
-* **Exécutable Windows** : chaîne de build complète fournie et validée sous Linux ; le `.exe` doit être compilé sous
-  Windows (non réalisé dans ce conteneur). Binaires non signés.
+* **Exécutable Windows** : compilé et testé sur runner GitHub Actions Windows (installateur NSIS + portable,
+  lancement de `MAKKADi.exe` vérifié) ; binaires **non signés** ; installation interactive non testée automatiquement.
 * Pas d'enrichissement récursif (les indicateurs associés sont relevés mais pas enrichis à leur tour).
 * Limitation de débit en mémoire (mono-processus).
 * Pas de mise à jour automatique (choix de sécurité tant que les binaires ne sont pas signés).

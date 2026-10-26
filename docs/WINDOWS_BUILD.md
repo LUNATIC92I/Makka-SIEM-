@@ -57,22 +57,33 @@ Workflow `.github/workflows/windows-build.yml` : *Actions → Windows build (.ex
   des binaires signés et un canal HTTPS de confiance (ex. `electron-updater` avec vérification de signature). Les
   mises à jour se font en réinstallant la nouvelle version ; la base est migrée automatiquement au démarrage.
 
-## Ce qui a été vérifié dans ce dépôt
+## Ce qui a été vérifié
 
-Le conteneur de développement est Linux sans Wine : **aucun `.exe` n'a été produit ici**. Ont été effectivement
-vérifiés (voir [TEST_RESULTS.md](TEST_RESULTS.md)) :
+**Le `.exe` a été compilé et testé sur un runner GitHub Actions `windows-latest`** (exécution
+[40252937566](https://github.com/LUNATIC92I/Makka-SIEM-/actions/runs/40252937566), 2026-10-26) :
 
-* compilation PyInstaller du backend avec le même `makkadi-backend.spec` (variante Linux) puis exécution :
-  migrations, interface servie, scénario de démonstration, génération d'un PDF ;
-* construction Electron `electron-builder --linux dir` avec ce backend et lancement sous Xvfb : démarrage du
-  serveur embarqué sur un port libre et affichage de l'écran de premier démarrage.
+| Étape | Résultat |
+|---|---|
+| Tests backend sous Windows | 147 réussis, 3 ignorés (tests réseau) — dont le test DPAPI |
+| `pip-audit`, tests et build frontend | réussis |
+| Backend PyInstaller `makkadi-backend.exe` | compilé ; test de fumée `/api/v1/health` : « Backend compilé OK : MAKKADi 0.1.0 » |
+| `MAKKADi-Setup-0.1.0-x64.exe` (NSIS) | produit — SHA-256 `0F0FF23CA13BCA61F13985CA0612B2B832FA9CE67D514121AA39346070C72188` |
+| `MAKKADi-Portable-0.1.0-x64.exe` | produit — SHA-256 `581F8D21D9AD7F24CC35E0F1FC625A3C53D1586B31E7055E9D06F587370AFF0C` |
+| Lancement de `MAKKADi.exe` | backend embarqué démarré sur un port local libre, fenêtre « MAKKADi » chargée (`http://127.0.0.1:54423/`), santé OK |
+| Données utilisateur | `%APPDATA%\MAKKADi\data` contient `master.key.dpapi` et `jwt.key.dpapi`, aucune clé en clair |
 
-La compilation Windows elle-même reste **à exécuter** (script ou workflow ci-dessus).
+Les exécutables sont téléchargeables dans l'artefact **`makkadi-windows`** de cette exécution (≈ 340 Mo, conservé
+jusqu'au 2027-01-24 selon la politique de rétention GitHub). Chaque push sur `main` ou un tag `v*` en produit un
+nouveau. Ils ne sont **pas signés** (voir ci-dessus).
+
+Non vérifié automatiquement : l'installation interactive via l'assistant NSIS et la navigation dans l'interface sous
+Windows (l'interface est testée de bout en bout sous Linux par le job `ui-e2e`).
 
 ## Dépannage
 
 | Symptôme | Cause probable |
 |---|---|
+| `cannot expand pattern … macro target is not defined` | ancienne configuration : utiliser `artifactName` par cible (`nsis`, `portable`), déjà corrigé |
 | « frontend/dist manquant » | exécuter `npm run build` dans `frontend` avant PyInstaller |
 | Fenêtre « Le serveur local s'est arrêté » | consulter le message (dernières lignes du journal) ; port bloqué par un antivirus, dossier de données non inscriptible |
 | Antivirus bloquant `makkadi-backend.exe` | faux positif fréquent pour PyInstaller non signé : signer le binaire |

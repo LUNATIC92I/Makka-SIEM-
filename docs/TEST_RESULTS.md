@@ -65,7 +65,7 @@ par le client HTTP, et URL de référence RDAP contenant des espaces.
 |---|---|
 | PyInstaller (`makkadi-backend.spec`, variante Linux) | compilé (96 Mo) ; exécution : santé OK, interface servie, migrations, démo, PDF généré |
 | electron-builder `--linux dir` avec ce backend, lancement sous Xvfb | backend embarqué démarré sur port libre, interface « premier démarrage » affichée (capture `electron-first-run.png`) |
-| **`.exe` Windows** | **non produit ici** (conteneur Linux sans Wine) — à générer via `scripts/build_windows.ps1` ou le workflow GitHub Actions |
+| **`.exe` Windows** | non productible dans le conteneur Linux ; **produit et testé sur runner Windows** (voir § 7 et WINDOWS_BUILD.md) |
 
 ## 6. Contrôles de sécurité
 
@@ -94,6 +94,12 @@ par le client HTTP, et URL de référence RDAP contenant des espaces.
   défaut réel (`SELECT DISTINCT` sur colonnes JSON refusé par PostgreSQL dans l'historique d'un indicateur).
 * Protection DPAPI des clés : test Windows ajouté (exécuté sur le runner Windows).
 
+* **Build Windows complet réussi** ([exécution 40252937566](https://github.com/LUNATIC92I/Makka-SIEM-/actions/runs/40252937566)) : 147 tests sous Windows, backend PyInstaller
+  testé, `MAKKADi-Setup-0.1.0-x64.exe` et `MAKKADi-Portable-0.1.0-x64.exe` produits, `MAKKADi.exe` lancé
+  (fenêtre chargée sur le backend embarqué), clés `master.key.dpapi` / `jwt.key.dpapi` présentes et aucune clé en
+  clair. Défaut corrigé en route : macro `${target}` invalide dans `artifactName`.
+* Notifications e-mail (SMTP) : TLS obligatoire et anti-SSRF testés (serveur SMTP simulé).
+
 ## 8. Restant à tester
 
 * Connecteurs SIEM et OSINT à clé contre des **instances réelles** (Sentinel, Splunk, Elastic, Wazuh, Defender,
@@ -101,5 +107,5 @@ par le client HTTP, et URL de référence RDAP contenant des espaces.
 * Fournisseur Claude contre l'API réelle (testé avec un client simulé uniquement) ; fournisseur compatible OpenAI
   contre un vrai modèle local.
 * MaxMind (base sous licence absente).
-* Compilation, installation et lancement du `.exe` sur Windows 10/11 ; signature Authenticode.
+* Installation interactive (assistant NSIS) et navigation manuelle sur Windows 10/11 ; signature Authenticode.
 * Tests de charge et tests d'interface automatisés au-delà des captures.
