@@ -90,6 +90,10 @@ par le client HTTP, et URL de référence RDAP contenant des espaces.
   géolocalisation, validation humaine, PDF + vérification d'intégrité, 6 pages, aucune erreur JavaScript). Ajouté
   à la CI (job `ui-e2e`).
 
+* **PostgreSQL 16** (serveur local) : `MAKKADI_TEST_DATABASE_URL=… pytest` → **145 réussis** après correction d'un
+  défaut réel (`SELECT DISTINCT` sur colonnes JSON refusé par PostgreSQL dans l'historique d'un indicateur).
+* Protection DPAPI des clés : test Windows ajouté (exécuté sur le runner Windows).
+
 ## 8. Restant à tester
 
 * Connecteurs SIEM et OSINT à clé contre des **instances réelles** (Sentinel, Splunk, Elastic, Wazuh, Defender,
@@ -97,6 +101,5 @@ par le client HTTP, et URL de référence RDAP contenant des espaces.
 * Fournisseur Claude contre l'API réelle (testé avec un client simulé uniquement) ; fournisseur compatible OpenAI
   contre un vrai modèle local.
 * MaxMind (base sous licence absente).
-* PostgreSQL.
 * Compilation, installation et lancement du `.exe` sur Windows 10/11 ; signature Authenticode.
 * Tests de charge et tests d'interface automatisés au-delà des captures.

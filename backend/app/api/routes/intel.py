@@ -56,8 +56,9 @@ def indicator_detail(indicator_id: int, db: Session = DbDep, user: User = Depend
     ind = db.get(Indicator, indicator_id)
     if ind is None:
         raise HTTPException(404, "Indicateur introuvable")
-    invs = [i for i in db.scalars(select(Investigation).join(InvestigationIndicator, InvestigationIndicator.investigation_id == Investigation.id)
-                                  .where(InvestigationIndicator.indicator_id == ind.id).distinct())
+    linked = select(InvestigationIndicator.investigation_id).where(InvestigationIndicator.indicator_id == ind.id)
+    # Subquery rather than DISTINCT: PostgreSQL has no equality operator for JSON columns.
+    invs = [i for i in db.scalars(select(Investigation).where(Investigation.id.in_(linked)))
             if can_access_investigation(db, user, i)]
     if not invs:
         raise HTTPException(404, "Indicateur introuvable")

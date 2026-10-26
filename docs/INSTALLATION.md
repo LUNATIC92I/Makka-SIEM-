@@ -36,13 +36,13 @@ Paramètres modifiables à chaud (*Paramètres*, journalisés) : pondérations e
 ## PostgreSQL
 
 ```bash
-pip install "psycopg[binary]>=3.2"
+pip install -r requirements-postgres.txt
 export MAKKADI_DATABASE_URL="postgresql+psycopg://makkadi:***@db:5432/makkadi"
 python -m app.run --migrate-only && python -m app.run
 ```
 
-> La suite de tests s'exécute sur SQLite ; le support PostgreSQL repose sur SQLAlchemy/Alembic mais n'a pas été
-> testé dans ce dépôt (voir STATUS.md).
+> La suite de tests complète passe sur PostgreSQL 16 :
+> `MAKKADI_TEST_DATABASE_URL=postgresql+psycopg://… python -m pytest` (job CI `backend-postgres`).
 
 ## Exposition réseau
 

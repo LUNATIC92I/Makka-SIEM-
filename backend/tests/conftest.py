@@ -30,9 +30,25 @@ ADMIN = ("admin", "Adm1nistrateur-Test")
 PUBLIC_IP = "93.184.215.14"
 
 
+TEST_DB_URL = os.environ.get("MAKKADI_TEST_DATABASE_URL")  # e.g. postgresql+psycopg://postgres@127.0.0.1:5433/makkadi
+
+
+def _reset_external_db(url: str) -> None:
+    from sqlalchemy import create_engine, text
+
+    engine = create_engine(url)
+    with engine.begin() as conn:
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
+    engine.dispose()
+
+
 @pytest.fixture
 def env(tmp_path, monkeypatch) -> Iterator[Path]:
     monkeypatch.setenv("MAKKADI_DATA_DIR", str(tmp_path))
+    if TEST_DB_URL:
+        _reset_external_db(TEST_DB_URL)
+        monkeypatch.setenv("MAKKADI_DATABASE_URL", TEST_DB_URL)
     get_settings.cache_clear()
     limiter.reset()
     set_resolver(lambda host: [PUBLIC_IP])

@@ -27,6 +27,7 @@
   fichiers en clair existants.
 * Mode actif (TCP) désactivé par défaut, restreint au périmètre autorisé.
 * Console SOC (8 pages + fiche d'investigation à 9 onglets).
+* PostgreSQL 16 : suite complète de tests réussie (job CI `backend-postgres`).
 * Migrations Alembic, `.env.example`, spec PyInstaller, application Electron, script de build Windows, CI.
 
 ## Implémenté, non validé sur instance réelle
@@ -39,7 +40,6 @@ Ils sont couverts par des tests sur réponses simulées conformes aux API docume
 
 * **Exécutable Windows** : chaîne de build complète fournie et validée sous Linux ; le `.exe` doit être compilé sous
   Windows (non réalisé dans ce conteneur). Binaires non signés.
-* PostgreSQL : supporté par l'ORM, non testé.
 * Pas d'enrichissement récursif (les indicateurs associés sont relevés mais pas enrichis à leur tour).
 * Limitation de débit en mémoire (mono-processus).
 * Pas de mise à jour automatique (choix de sécurité tant que les binaires ne sont pas signés).
