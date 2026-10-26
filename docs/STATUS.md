@@ -23,6 +23,8 @@
   (marqués « remplacés ») et visibles dans l'historique Threat Intelligence et la chronologie.
 * Notifications (webhook JSON signé HMAC, Microsoft Teams, Slack) au franchissement d'un seuil de risque, une fois
   par niveau, réémises en cas d'escalade ; URL chiffrée et contrôlée anti-SSRF ; données de démo exclues par défaut.
+* Sous Windows, clé maîtresse et clé JWT chiffrées par DPAPI (liées au compte Windows) ; migration automatique des
+  fichiers en clair existants.
 * Mode actif (TCP) désactivé par défaut, restreint au périmètre autorisé.
 * Console SOC (8 pages + fiche d'investigation à 9 onglets).
 * Migrations Alembic, `.env.example`, spec PyInstaller, application Electron, script de build Windows, CI.
@@ -47,7 +49,6 @@ Ils sont couverts par des tests sur réponses simulées conformes aux API docume
 
 1. Validation des connecteurs sur des instances SIEM/TI réelles (Sentinel, Splunk, Elastic, Wazuh, Defender).
 2. Signature Authenticode et mise à jour automatique signée (`electron-updater`).
-3. Protection de la clé maîtresse par DPAPI / Windows Credential Manager.
 4. Notifications par e-mail (SMTP) ; webhooks Teams/Slack non validés sur des espaces réels.
 5. Enrichissement de second niveau contrôlé (profondeur, budget de requêtes).
 6. Comparaison visuelle entre passes d'enrichissement (les données sont déjà historisées).

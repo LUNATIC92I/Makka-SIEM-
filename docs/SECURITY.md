@@ -53,10 +53,12 @@
 
 ## Exploitation sûre
 
-* Sauvegarder le dossier de données (`makkadi.db`, `master.key`, `jwt.key`, `reports/`). Sans `master.key`, les
-  secrets des connecteurs sont illisibles.
-* Sous Windows, le dossier `%APPDATA%\MAKKADi` hérite des ACL du profil utilisateur. Pour un poste partagé,
-  fournir `MAKKADI_MASTER_KEY` par un coffre (ex. Windows Credential Manager) — intégration DPAPI : voir STATUS.md.
+* Sauvegarder le dossier de données (`makkadi.db`, clés, `reports/`). Sans la clé maîtresse, les secrets des
+  connecteurs sont illisibles.
+* Sous Windows, la clé maîtresse et la clé JWT sont chiffrées par **DPAPI** (`master.key.dpapi`, `jwt.key.dpapi`),
+  donc liées au compte Windows : une sauvegarde restaurée sur un autre compte ou poste ne pourra pas les déchiffrer.
+  Pour une migration de poste, fournir la clé via `MAKKADI_MASTER_KEY` (coffre d'entreprise). Ailleurs, fichiers
+  en permissions 0600.
 * Pour un déploiement multi-utilisateurs : PostgreSQL, reverse proxy TLS devant le serveur, `MAKKADI_ALLOW_REMOTE_BIND`
   explicite, et revue des limites de débit.
 * Signer le code des exécutables Windows (Authenticode) avant diffusion.
