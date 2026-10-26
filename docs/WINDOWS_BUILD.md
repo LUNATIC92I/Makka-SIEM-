@@ -72,6 +72,16 @@ Workflow `.github/workflows/windows-build.yml` : *Actions → Windows build (.ex
 | Lancement de `MAKKADi.exe` | backend embarqué démarré sur un port local libre, fenêtre « MAKKADi » chargée (`http://127.0.0.1:54423/`), santé OK |
 | Données utilisateur | `%APPDATA%\MAKKADi\data` contient `master.key.dpapi` et `jwt.key.dpapi`, aucune clé en clair |
 
+Build le plus récent vérifié (exécution 40253530668, commit `d11819a`, même test de fumée réussi) :
+
+```
+ec1caef50020b65f8ad190dde2fda169648cf58d64c9c3a5364a807dd6ee8e8d  MAKKADi-Setup-0.1.0-x64.exe
+51c38f7635744fe287a854f2bff3587ca12ecaef96ed979fc1045ca58d354ab2  MAKKADi-Portable-0.1.0-x64.exe
+```
+
+(Les builds ne sont pas reproductibles octet pour octet : chaque exécution produit des empreintes différentes, à
+comparer avec celles affichées dans le journal de l'exécution concernée.)
+
 Les exécutables sont téléchargeables dans l'artefact **`makkadi-windows`** de cette exécution (≈ 340 Mo, conservé
 jusqu'au 2027-01-24 selon la politique de rétention GitHub). Chaque push sur `main` ou un tag `v*` en produit un
 nouveau. Ils ne sont **pas signés** (voir ci-dessus).

@@ -18,3 +18,4 @@ desktop/resources/frontend/
 .pytest_cache/
 .coverage
 *.log
+release/
