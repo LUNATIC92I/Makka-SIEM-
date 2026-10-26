@@ -7,8 +7,8 @@
       Set-ExecutionPolicy -Scope Process Bypass
       .\scripts\build_windows.ps1
   Résultats :
-      desktop\dist\MAKKADi-<version>-x64-nsis.exe      (installateur)
-      desktop\dist\MAKKADi-<version>-x64-portable.exe  (exécutable portable)
+      desktop\dist\MAKKADi-Setup-<version>-x64.exe      (installateur)
+      desktop\dist\MAKKADi-Portable-<version>-x64.exe  (exécutable portable)
       backend\dist\makkadi-backend\makkadi-backend.exe (serveur seul, utilisable sans Electron)
 #>
 param(

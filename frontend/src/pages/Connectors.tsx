@@ -173,7 +173,9 @@ function NewNotification({ catalog, onCreated }: { catalog: Catalog; onCreated: 
   const create = async () => {
     setErr(null);
     try {
-      await api.post("/connectors", { kind: "notification", provider, name, enabled: true, settings: { min_risk_level: level, include_synthetic: "false" }, secrets: { url } });
+      const email = provider === "email";
+      // E-mail: created disabled, SMTP settings are completed in the channel's "Configurer" panel.
+      await api.post("/connectors", { kind: "notification", provider, name, enabled: !email, settings: { min_risk_level: level, include_synthetic: "false" }, secrets: email ? {} : { url } });
       setName(""); setUrl(""); onCreated();
     } catch (e) { setErr(e); }
   };
@@ -183,9 +185,9 @@ function NewNotification({ catalog, onCreated }: { catalog: Catalog; onCreated: 
       <div className="flex flex-wrap items-end gap-2">
         <div><label className="label">Type</label><select className="input w-64" value={provider} onChange={(e) => setProvider(e.target.value)}>{catalog.notification.map((n) => <option key={n.provider} value={n.provider}>{n.display_name}</option>)}</select></div>
         <div><label className="label">Nom unique</label><input className="input w-48 mono" value={name} onChange={(e) => setName(e.target.value)} placeholder="ex. teams-soc" /></div>
-        <div className="min-w-[280px] flex-1"><label className="label">URL du webhook (secret)</label><input className="input mono" type="password" autoComplete="off" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" /></div>
+        {provider !== "email" && <div className="min-w-[280px] flex-1"><label className="label">URL du webhook (secret)</label><input className="input mono" type="password" autoComplete="off" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" /></div>}
         <div><label className="label">Seuil</label><select className="input w-32" value={level} onChange={(e) => setLevel(e.target.value)}>{["modéré", "élevé", "critique"].map((l) => <option key={l}>{l}</option>)}</select></div>
-        <button className="btn-primary" disabled={name.length < 2 || !url.startsWith("https://")} onClick={create}>Créer</button>
+        <button className="btn-primary" disabled={name.length < 2 || (provider !== "email" && !url.startsWith("https://"))} onClick={create}>Créer</button>
       </div>
       <ErrorBox error={err} />
     </div>

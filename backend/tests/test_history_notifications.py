@@ -109,3 +109,45 @@ def test_failed_notification_is_retried_and_visible(client, admin, mock_http, db
     assert tasks and all(t.status == "pending" and t.attempts == 1 and "503" in t.last_error for t in tasks)
     conn = next(c for c in client.get(API + "/connectors", headers=admin).json() if c["kind"] == "notification")
     assert conn["state"] == "en erreur"
+
+
+def test_email_notification_requires_tls(client, admin, monkeypatch):
+    import smtplib
+
+    sent = []
+
+    class FakeSMTP:
+        def __init__(self, host, port, timeout=None):
+            self.host, self.port, self.tls = host, port, False
+
+        def starttls(self, context=None):
+            assert context is not None
+            self.tls = True
+
+        def login(self, user, password):
+            assert self.tls and (user, password) == ("soc", "pw")
+
+        def send_message(self, msg):
+            assert self.tls, "envoi sans TLS"
+            sent.append(msg)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(smtplib, "SMTP", FakeSMTP)
+    bad = client.post(API + "/connectors", headers=admin, json={
+        "kind": "notification", "provider": "email", "name": "mail-bad", "settings": {"smtp_host": "127.0.0.1"}})
+    assert bad.status_code == 422  # anti-SSRF on the SMTP host
+    r = client.post(API + "/connectors", headers=admin, json={
+        "kind": "notification", "provider": "email", "name": "mail", "enabled": True,
+        "settings": {"smtp_host": "smtp.example.org", "smtp_port": "587", "mail_from": "makkadi@example.org",
+                     "mail_to": "soc@example.org, cert@example.org", "min_risk_level": "élevé", "include_synthetic": "true"},
+        "secrets": {"username": "soc", "password": "pw"}})
+    assert r.status_code == 201 and r.json()["secret_fields"] == ["username", "password"]
+    client.post(API + "/ingest/demo", headers=admin)
+    drain()
+    assert sent and "risque" in sent[0]["Subject"] and sent[0]["To"] == "soc@example.org, cert@example.org"
+    assert "DÉMONSTRATION" in sent[0].get_content()

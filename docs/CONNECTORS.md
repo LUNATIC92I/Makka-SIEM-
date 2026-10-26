@@ -109,6 +109,7 @@ Règles d'interprétation intégrées :
 | Webhook JSON générique | `{"type": "investigation.risk_threshold", reference, title, risk_level, risk_score, confidence_level, confidence_score, severity, source_ip, event_count, synthetic_data, created_at, sent_at}` | signé `X-Makkadi-Signature` (HMAC-SHA256, secret `webhook_secret`) comme les webhooks entrants |
 | Microsoft Teams | `{"text": …}` (webhook entrant / Workflows) | URL secrète chiffrée |
 | Slack | `{"text": …}` (Incoming Webhook) | URL secrète chiffrée |
+| E-mail (SMTP) | texte brut, objet `[MAKKADi] INV-… — risque …` | STARTTLS (587) ou TLS (465) **obligatoire**, identifiants chiffrés, hôte soumis au contrôle anti-SSRF ; paramètres `smtp_host`, `smtp_port`, `mail_from`, `mail_to` |
 
 Paramètres : `min_risk_level` (défaut `élevé`), `include_synthetic` (défaut `false`). Une notification par
 investigation et par niveau ; une nouvelle est envoyée si le risque s'aggrave. Les échecs sont relancés par la file

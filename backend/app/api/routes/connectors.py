@@ -16,7 +16,7 @@ from app.core.errors import ConnectorError, OutboundBlocked
 from app.core.timeutil import utc_now
 from app.connectors.http import SafeHttpClient
 from app.investigation.pipeline import build_siem_connector
-from app.services.notifications import LEVELS, PROVIDERS as NOTIFY_PROVIDERS, SECRET_FIELDS as NOTIFY_SECRETS, SETTINGS_SCHEMA as NOTIFY_SCHEMA
+from app.services.notifications import EMAIL_SECRETS, EMAIL_SETTINGS, LEVELS, validate_smtp_host, PROVIDERS as NOTIFY_PROVIDERS, SECRET_FIELDS as NOTIFY_SECRETS, SETTINGS_SCHEMA as NOTIFY_SCHEMA
 from app.models import ConnectorConfig, User
 from app.schemas.serializers import MATURITY_LABELS, connector_out
 from app.security.secrets_vault import SECRET_MASK, decrypt_secrets, encrypt_secrets
@@ -40,7 +40,9 @@ def catalog(_: User = Depends(require("connectors:read"))) -> dict:
                    "settings_schema": c.settings_schema, "terms_url": c.terms_url,
                    "maturity": MATURITY_LABELS.get(c.maturity, c.maturity)} for c in REAL_PROVIDERS],
         "ai": [{"provider": k, "display_name": v} for k, v in AI_PROVIDERS.items()],
-        "notification": [{"provider": k, "display_name": v, "settings_schema": NOTIFY_SCHEMA, "secret_fields": NOTIFY_SECRETS}
+        "notification": [{"provider": k, "display_name": v,
+                          "settings_schema": EMAIL_SETTINGS if k == "email" else NOTIFY_SCHEMA,
+                          "secret_fields": EMAIL_SECRETS if k == "email" else NOTIFY_SECRETS}
                          for k, v in NOTIFY_PROVIDERS.items()],
     }
 
@@ -85,6 +87,11 @@ def _validate(kind: str, provider: str, settings: dict[str, Any]) -> None:
         raise HTTPException(422, "Paramètres trop volumineux")
     if kind == "notification" and settings.get("min_risk_level") not in (None, "", *LEVELS):
         raise HTTPException(422, "Seuil de risque invalide")
+    if kind == "notification" and provider == "email" and settings.get("smtp_host"):
+        try:
+            validate_smtp_host(str(settings["smtp_host"]))
+        except OutboundBlocked as exc:
+            raise HTTPException(422, f"Serveur SMTP refusé : {exc}") from exc
 
 
 def _validate_secret_url(kind: str, secrets: dict[str, str] | None) -> None:
@@ -199,6 +206,14 @@ async def test_connector(connector_id: int, body: TestIn, request: Request, db: 
             result = await provider.lookup(ind.type, ind.value)
             ok = result.status in ("ok", "no_data")
             message = f"Statut : {result.status}" + (f" — {result.error_message}" if result.error_message else "")
+        elif row.kind == "notification" and row.provider == "email":
+            import asyncio as _asyncio
+
+            from app.services.notifications import _send_email
+
+            await _asyncio.to_thread(_send_email, row.settings or {}, decrypt_secrets(row.secret_ciphertext),
+                                     "MAKKADi : message de test", "Message de test (aucune donnée d'investigation).")
+            ok, message = True, "E-mail de test envoyé"
         elif row.kind == "notification":
             secrets = decrypt_secrets(row.secret_ciphertext)
             if not secrets.get("url"):

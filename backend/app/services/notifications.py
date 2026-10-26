@@ -9,8 +9,12 @@ again only if the risk level escalates.
 
 from __future__ import annotations
 
+import asyncio
 import json
+import smtplib
+import ssl
 import time
+from email.message import EmailMessage
 from typing import Any
 
 from sqlalchemy import select
@@ -22,15 +26,20 @@ from app.core.errors import ConnectorError
 from app.core.timeutil import iso, utc_now
 from app.models import ConnectorConfig, Investigation
 from app.security.secrets_vault import decrypt_secrets
+from app.security.ssrf import validate_outbound_url
 from app.security.webhook import compute_signature
 from app.services import audit
 from app.services.tasks import enqueue, handler
 
-PROVIDERS = {"webhook": "Webhook JSON générique", "teams": "Microsoft Teams (webhook entrant)", "slack": "Slack (webhook entrant)"}
+PROVIDERS = {"webhook": "Webhook JSON générique", "teams": "Microsoft Teams (webhook entrant)",
+             "slack": "Slack (webhook entrant)", "email": "E-mail (SMTP avec TLS)"}
 LEVELS = ["faible", "modéré", "élevé", "critique"]
 SETTINGS_SCHEMA = {"min_risk_level": "Seuil : faible | modéré | élevé | critique (défaut élevé)",
                    "include_synthetic": "true pour notifier aussi les données de démonstration"}
 SECRET_FIELDS = ["url", "webhook_secret"]
+EMAIL_SETTINGS = {"smtp_host": "Serveur SMTP", "smtp_port": "587 (STARTTLS) ou 465 (TLS)", "mail_from": "Expéditeur",
+                  "mail_to": "Destinataires (séparés par des virgules)", **SETTINGS_SCHEMA}
+EMAIL_SECRETS = ["username", "password"]
 
 
 def _rank(level: str | None) -> int:
@@ -80,8 +89,44 @@ def build_payload(provider: str, inv: Investigation) -> dict[str, Any]:
     return {"application": app_name, "type": "investigation.risk_threshold", "sent_at": iso(utc_now()), **facts}
 
 
+def validate_smtp_host(host: str) -> None:
+    """Same destination policy as HTTP connectors (anti-SSRF)."""
+    validate_outbound_url(f"https://{host}/")
+
+
+def _send_email(settings: dict[str, Any], secrets: dict[str, Any], subject: str, text: str) -> None:
+    host = str(settings.get("smtp_host") or "")
+    recipients = [a.strip() for a in str(settings.get("mail_to") or "").split(",") if a.strip()]
+    if not host or not recipients or not settings.get("mail_from"):
+        raise ConnectorError("Paramètres SMTP incomplets (smtp_host, mail_from, mail_to)")
+    validate_smtp_host(host)
+    port = int(settings.get("smtp_port") or 587)
+    msg = EmailMessage()
+    msg["Subject"], msg["From"], msg["To"] = subject, str(settings["mail_from"]), ", ".join(recipients)
+    msg.set_content(text)
+    context = ssl.create_default_context()
+    timeout = get_settings().http_timeout_seconds
+    try:
+        if port == 465:
+            server = smtplib.SMTP_SSL(host, port, timeout=timeout, context=context)
+        else:
+            server = smtplib.SMTP(host, port, timeout=timeout)
+            server.starttls(context=context)  # TLS is mandatory: no clear-text fallback
+        with server:
+            if secrets.get("username"):
+                server.login(str(secrets["username"]), str(secrets.get("password", "")))
+            server.send_message(msg)
+    except (smtplib.SMTPException, OSError) as exc:
+        raise ConnectorError(f"Échec d'envoi SMTP ({type(exc).__name__})", retryable=True) from exc
+
+
 async def send(db: Session, channel: ConnectorConfig, inv: Investigation) -> None:
     secrets = decrypt_secrets(channel.secret_ciphertext)
+    if channel.provider == "email":
+        text = build_payload("slack", inv)["text"].replace("**", "")
+        subject = f"[{get_settings().app_name}] {inv.reference} — risque {inv.risk_level}"
+        await asyncio.to_thread(_send_email, channel.settings or {}, secrets, subject, text)
+        return
     url = secrets.get("url")
     if not url:
         raise ConnectorError("URL du webhook non configurée")

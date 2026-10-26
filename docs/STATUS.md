@@ -21,7 +21,7 @@
 * File de tâches persistante (retries, temporisation, reprise après interruption) consultable.
 * Historique des enrichissements : chaque relance crée une nouvelle passe, les résultats antérieurs sont conservés
   (marqués « remplacés ») et visibles dans l'historique Threat Intelligence et la chronologie.
-* Notifications (webhook JSON signé HMAC, Microsoft Teams, Slack) au franchissement d'un seuil de risque, une fois
+* Notifications (webhook JSON signé HMAC, Microsoft Teams, Slack, e-mail SMTP avec TLS obligatoire) au franchissement d'un seuil de risque, une fois
   par niveau, réémises en cas d'escalade ; URL chiffrée et contrôlée anti-SSRF ; données de démo exclues par défaut.
 * Sous Windows, clé maîtresse et clé JWT chiffrées par DPAPI (liées au compte Windows) ; migration automatique des
   fichiers en clair existants.
@@ -49,7 +49,7 @@ Ils sont couverts par des tests sur réponses simulées conformes aux API docume
 
 1. Validation des connecteurs sur des instances SIEM/TI réelles (Sentinel, Splunk, Elastic, Wazuh, Defender).
 2. Signature Authenticode et mise à jour automatique signée (`electron-updater`).
-4. Notifications par e-mail (SMTP) ; webhooks Teams/Slack non validés sur des espaces réels.
+4. Validation des canaux Teams/Slack/SMTP sur des espaces et serveurs réels.
 5. Enrichissement de second niveau contrôlé (profondeur, budget de requêtes).
 6. Comparaison visuelle entre passes d'enrichissement (les données sont déjà historisées).
 7. DNS passif (sources sous licence), Censys, sources sectorielles (CERT, ISAC).

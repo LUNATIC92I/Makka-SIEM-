@@ -2,7 +2,7 @@
 
 ## Utilisateur final (Windows)
 
-1. Exécuter `MAKKADi-<version>-x64-nsis.exe` (ou lancer directement la version portable).
+1. Exécuter `MAKKADi-Setup-<version>-x64.exe` (ou lancer directement la version portable).
 2. Au premier démarrage, créer le compte administrateur (12 caractères minimum, majuscules, minuscules, chiffres).
 3. Le mode démonstration est actif par défaut : *Vue d'ensemble → Charger le scénario de démonstration*.
 4. Pour un usage réel : *Connecteurs* → activer les sources OSINT et configurer le SIEM, puis définir

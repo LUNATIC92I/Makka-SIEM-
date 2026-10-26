@@ -4,8 +4,8 @@
 
 | Fichier | Description |
 |---|---|
-| `desktop\dist\MAKKADi-0.1.0-x64-nsis.exe` | installateur (choix du dossier, raccourcis, désinstallation ; installation par utilisateur, sans droits administrateur) |
-| `desktop\dist\MAKKADi-0.1.0-x64-portable.exe` | exécutable portable (aucune installation) |
+| `desktop\dist\MAKKADi-Setup-0.1.0-x64.exe` | installateur (choix du dossier, raccourcis, désinstallation ; installation par utilisateur, sans droits administrateur) |
+| `desktop\dist\MAKKADi-Portable-0.1.0-x64.exe` | exécutable portable (aucune installation) |
 | `backend\dist\makkadi-backend\makkadi-backend.exe` | serveur seul (interface dans le navigateur : `makkadi-backend.exe --open-browser`) |
 
 Architecture : Electron lance `resources\backend\makkadi-backend.exe --host 127.0.0.1 --port <libre> --data-dir

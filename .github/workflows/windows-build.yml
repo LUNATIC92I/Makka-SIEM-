@@ -6,6 +6,9 @@ on:
     branches: ["main", "ccr-e6437631-btar9d"]
 permissions:
   contents: read
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: windows-latest
@@ -18,6 +21,30 @@ jobs:
       - name: Build MAKKADi (tests + PyInstaller + Electron)
         shell: pwsh
         run: ./scripts/build_windows.ps1
+      - name: Smoke test of the desktop executable (MAKKADi.exe)
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem desktop/dist/win-unpacked -Filter MAKKADi.exe | Select-Object -First 1
+          if (-not $exe) { throw "MAKKADi.exe introuvable" }
+          $env:APPDATA = Join-Path $env:RUNNER_TEMP "appdata"
+          $p = Start-Process -FilePath $exe.FullName -ArgumentList "--remote-debugging-port=9333" -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 90; $i++) {
+            Start-Sleep -Seconds 2
+            try {
+              $pages = Invoke-RestMethod "http://127.0.0.1:9333/json/list" -TimeoutSec 3
+              $page = $pages | Where-Object { $_.type -eq "page" -and $_.url -like "http://127.0.0.1:*" -and $_.title -eq "MAKKADi" }
+              if ($page) {
+                $base = ([Uri]$page[0].url).GetLeftPart("Authority")
+                $health = Invoke-RestMethod "$base/api/v1/health" -TimeoutSec 3
+                Write-Host "Fenêtre chargée : $($page[0].url) — backend $($health.app_name) $($health.version) demo=$($health.demo_mode)"
+                $ok = $true; break
+              }
+            } catch { }
+          }
+          Get-Process | Where-Object { $_.ProcessName -in @("MAKKADi", "makkadi-backend") } | Stop-Process -Force -ErrorAction SilentlyContinue
+          if (-not $ok) { throw "MAKKADi.exe n'a pas affiché l'interface" }
+          Get-ChildItem (Join-Path $env:APPDATA "MAKKADi\data") | Format-Table Name, Length
       - uses: actions/upload-artifact@v4
         with:
           name: makkadi-windows

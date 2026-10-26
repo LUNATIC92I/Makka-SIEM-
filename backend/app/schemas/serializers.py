@@ -120,10 +120,12 @@ def connector_out(c: ConnectorConfig) -> dict[str, Any]:
         meta = {"display_name": cls.display_name, "description": cls.description, "secret_fields": cls.secret_fields,
                 "settings_schema": cls.settings_schema, "maturity": MATURITY_LABELS.get(cls.maturity, cls.maturity)}
     elif c.kind == "notification":
-        from app.services.notifications import PROVIDERS, SECRET_FIELDS, SETTINGS_SCHEMA
+        from app.services.notifications import EMAIL_SECRETS, EMAIL_SETTINGS, PROVIDERS, SECRET_FIELDS, SETTINGS_SCHEMA
 
-        meta = {"display_name": PROVIDERS.get(c.provider, c.provider), "settings_schema": SETTINGS_SCHEMA,
-                "secret_fields": SECRET_FIELDS, "description": "Notification sortante au franchissement d'un seuil de risque."}
+        email = c.provider == "email"
+        meta = {"display_name": PROVIDERS.get(c.provider, c.provider),
+                "settings_schema": EMAIL_SETTINGS if email else SETTINGS_SCHEMA,
+                "secret_fields": EMAIL_SECRETS if email else SECRET_FIELDS, "description": "Notification sortante au franchissement d'un seuil de risque."}
     secrets = masked(c.secret_ciphertext)
     # "operational" only when configured, enabled and the last real run succeeded.
     if not c.enabled:

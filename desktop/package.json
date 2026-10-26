@@ -43,8 +43,7 @@
         "nsis",
         "portable"
       ],
-      "icon": "build/icon.ico",
-      "artifactName": "${productName}-${version}-${arch}-${target}.${ext}"
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -53,7 +52,8 @@
       "createDesktopShortcut": true,
       "shortcutName": "MAKKADi",
       "uninstallDisplayName": "MAKKADi",
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
     },
     "linux": {
       "target": [
@@ -61,6 +61,9 @@
       ],
       "icon": "build/icon.png"
     },
-    "publish": null
+    "publish": null,
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}-${arch}.${ext}"
+    }
   }
 }
