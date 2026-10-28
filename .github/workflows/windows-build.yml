@@ -49,6 +49,14 @@ jobs:
           if (-not (Test-Path (Join-Path $data "master.key.dpapi"))) { throw "Clé maîtresse non protégée par DPAPI" }
           if (Test-Path (Join-Path $data "master.key")) { throw "Clé maîtresse en clair présente" }
           Write-Host "Clés locales protégées par DPAPI : OK"
+          # Forgotten-password tool: shipped next to the backend, finds the application data by itself.
+          $res = "desktop/dist/win-unpacked/resources"
+          if (-not (Test-Path "$res/Reinitialiser-mot-de-passe.cmd")) { throw "Outil de réinitialisation absent" }
+          $out = & "$res/backend/makkadi-backend.exe" --reset-password 2>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch [regex]::Escape("MAKKADi\data") -or $out -notmatch "Aucun compte") { throw "Outil de réinitialisation : dossier de données non trouvé" }
+          Write-Host "Outil de réinitialisation du mot de passe : OK"
+          $global:LASTEXITCODE = 0  # the tool exits 1 here on purpose (no account yet)
       - uses: actions/upload-artifact@v4
         with:
           name: makkadi-windows
