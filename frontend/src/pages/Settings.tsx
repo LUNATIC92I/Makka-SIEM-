@@ -4,6 +4,7 @@ import { Card, ErrorBox, Pill, Spinner, Tabs } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../hooks/useAuth";
 import { fmtDate } from "../lib/format";
+import PasswordDialog from "../components/PasswordDialog";
 import { api } from "../services/api";
 import type { User } from "../types";
 
@@ -98,6 +99,19 @@ function UsersAdmin() {
   const roles = useApi<{ name: string; description: string; permissions: string[] }[]>("/users/roles");
   const [form, setForm] = useState({ username: "", password: "", role: "analyst" });
   const [err, setErr] = useState<unknown>(null);
+  const [resetFor, setResetFor] = useState<User | null>(null);
+  const [notice, setNotice] = useState("");
+  const patch = async (u: User, body: Record<string, unknown>) => {
+    setErr(null);
+    try { await api.patch(`/users/${u.id}`, body); reload(); } catch (ex) { setErr(ex); }
+  };
+  const resetPassword = async (next: string) => {
+    if (!resetFor) return;
+    await api.patch(`/users/${resetFor.id}`, { password: next });
+    setNotice(`Mot de passe de ${resetFor.username} réinitialisé : compte déverrouillé, sessions fermées. Communiquez-lui le nouveau mot de passe par un canal sûr.`);
+    setResetFor(null);
+    reload();
+  };
   const create = async () => {
     setErr(null);
     try { await api.post("/users", form); setForm({ username: "", password: "", role: "analyst" }); reload(); } catch (e) { setErr(e); }
@@ -112,10 +126,20 @@ function UsersAdmin() {
               <td><select className="input w-32" value={u.role} onChange={async (e) => { try { await api.patch(`/users/${u.id}`, { role: e.target.value }); reload(); } catch (ex) { setErr(ex); } }}>{["admin", "analyst", "viewer"].map((r) => <option key={r}>{r}</option>)}</select></td>
               <td>{u.is_active ? <Pill className="border-emerald-700 text-emerald-300">actif</Pill> : <Pill className="border-ink-500 text-slate-500">désactivé</Pill>}{u.locked && <Pill className="ml-1 border-amber-700 text-amber-300">verrouillé</Pill>}</td>
               <td className="mono text-xs">{fmtDate(u.last_login_at)}</td>
-              <td><button className="btn-ghost" onClick={async () => { try { await api.patch(`/users/${u.id}`, { is_active: !u.is_active }); reload(); } catch (ex) { setErr(ex); } }}>{u.is_active ? "Désactiver" : "Réactiver"}</button></td></tr>
+              <td className="whitespace-nowrap">
+                <button className="btn-ghost" onClick={() => { setNotice(""); setResetFor(u); }}>Réinitialiser le mot de passe</button>
+                {u.locked && <button className="btn-ghost ml-1" onClick={() => patch(u, { unlock: true })}>Déverrouiller</button>}
+                <button className="btn-ghost ml-1" onClick={() => patch(u, { is_active: !u.is_active })}>{u.is_active ? "Désactiver" : "Réactiver"}</button>
+              </td></tr>
           ))}</tbody>
         </table>
+        {notice && <div className="mt-3 text-sm text-emerald-300">{notice}</div>}
         <ErrorBox error={err} />
+        {resetFor && (
+          <PasswordDialog title={`Réinitialiser le mot de passe de ${resetFor.username}`} submitLabel="Réinitialiser"
+            intro="Le compte sera déverrouillé et toutes ses sessions ouvertes seront fermées. L'opération est inscrite au journal d'audit."
+            onSubmit={resetPassword} onClose={() => setResetFor(null)} />
+        )}
       </Card>
       <div className="space-y-4">
         <Card title="Créer un utilisateur">

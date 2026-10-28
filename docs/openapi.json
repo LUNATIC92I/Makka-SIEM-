@@ -2446,7 +2446,8 @@
       "enum": [
        "siem",
        "osint",
-       "ai"
+       "ai",
+       "notification"
       ],
       "title": "Kind"
      },
@@ -2865,6 +2866,17 @@
        }
       ],
       "title": "Password"
+     },
+     "unlock": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unlock"
      }
     },
     "type": "object",

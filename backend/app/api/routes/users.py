@@ -27,6 +27,7 @@ class UserPatch(BaseModel):
     role: str | None = Field(default=None, pattern=r"^(admin|analyst|viewer)$")
     is_active: bool | None = None
     password: str | None = Field(default=None, max_length=256)
+    unlock: bool | None = None
 
 
 @router.get("")
@@ -89,8 +90,12 @@ def update_user(user_id: int, body: UserPatch, request: Request, db: Session = D
         if problems:
             raise HTTPException(422, "Mot de passe trop faible : " + ", ".join(problems))
         user.password_hash = hash_password(body.password)
+        user.failed_logins, user.locked_until = 0, None
         user.token_version += 1
         changes["password"] = "reset"
+    if body.unlock and user.locked_until is not None:
+        user.failed_logins, user.locked_until = 0, None
+        changes["unlocked"] = True
     audit.record(db, "user.updated", actor=admin.username, actor_user_id=admin.id, target_type="user", target_id=user.id,
                  details=changes, client_ip=client_ip(request))
     db.commit()

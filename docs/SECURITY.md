@@ -6,6 +6,7 @@
 |---|---|
 | Exposition réseau involontaire | écoute sur `127.0.0.1` par défaut ; refus de démarrer sur une autre interface sans `MAKKADI_ALLOW_REMOTE_BIND=true` ; Electron choisit un port libre local |
 | Accès non autorisé | authentification obligatoire (JWT HS256, durée 60 min, révocation par `token_version` à la déconnexion / changement de mot de passe / de rôle) ; création du premier administrateur uniquement depuis le poste local et une seule fois |
+| Mot de passe oublié | aucun envoi par e-mail ni question secrète. Réinitialisation par un administrateur (journalisée, sans le mot de passe) ou, pour le dernier administrateur, outil local `--reset-password` : il exige l'accès au dossier de données, comme l'initialisation. Toute réinitialisation déverrouille le compte et révoque ses sessions |
 | Force brute | bcrypt (coût 12), verrouillage après 5 échecs (15 min), limitation de débit dédiée à la connexion (10/min/IP), comparaison factice pour les utilisateurs inconnus |
 | Élévation de privilèges | RBAC (admin, analyst, viewer) vérifié côté serveur sur chaque route ; investigations **restreintes** visibles seulement du propriétaire, des assignés et des administrateurs, avec un 404 identique à « inexistant » |
 | Injection SQL | ORM paramétré exclusivement ; filtres validés (types, longueurs, motifs) ; tests d'injection |

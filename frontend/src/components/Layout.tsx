@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { api } from "../services/api";
+import PasswordDialog from "./PasswordDialog";
 import GlitchText from "../fx/GlitchText";
 import HexTicker from "../fx/HexTicker";
 import { useFx } from "../fx/useFx";
@@ -22,6 +25,12 @@ export const Icon = ({ d, className = "h-4 w-4" }: { d: string; className?: stri
 export default function Layout() {
   const { user, meta, logout, can } = useAuth();
   const { enabled, toggle } = useFx();
+  const [pwOpen, setPwOpen] = useState(false);
+  const changePassword = async (next: string, current: string) => {
+    await api.post("/auth/change-password", { current_password: current, new_password: next });
+    try { sessionStorage.setItem("makkadi.notice", "Mot de passe modifié. Reconnectez-vous avec le nouveau mot de passe."); } catch { /* ignore */ }
+    await logout();
+  };
   return (
     <div className="flex h-full">
       <aside className="flex w-60 shrink-0 flex-col border-r border-neon-500/20 bg-ink-900/90 backdrop-blur-sm">
@@ -51,6 +60,7 @@ export default function Layout() {
           <button className="btn-ghost mb-2 w-full justify-center font-mono text-xs" onClick={toggle} aria-pressed={enabled}>
             Effets visuels : {enabled ? "activés" : "désactivés"}
           </button>
+          <button className="btn-ghost mb-2 w-full justify-center" onClick={() => setPwOpen(true)}>Changer mon mot de passe</button>
           <button className="btn-ghost w-full justify-center" onClick={logout}>Se déconnecter</button>
         </div>
       </aside>
@@ -58,6 +68,11 @@ export default function Layout() {
         <HexTicker />
         <div className="reveal mx-auto max-w-[1600px] p-6"><Outlet /></div>
       </main>
+      {pwOpen && (
+        <PasswordDialog title="Changer mon mot de passe" askCurrent submitLabel="Changer le mot de passe"
+          intro="Toutes vos sessions ouvertes seront fermées : vous devrez vous reconnecter."
+          onSubmit={changePassword} onClose={() => setPwOpen(false)} />
+      )}
     </div>
   );
 }

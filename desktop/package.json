@@ -35,6 +35,10 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "extra/Reinitialiser-mot-de-passe.cmd",
+        "to": "Reinitialiser-mot-de-passe.cmd"
       }
     ],
     "asar": true,

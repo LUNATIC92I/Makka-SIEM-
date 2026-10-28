@@ -4,7 +4,7 @@
  * per-user data directory, waits for /api/v1/health, then opens the UI in a
  * locked-down BrowserWindow. The backend is stopped when the app quits.
  */
-const { app, BrowserWindow, dialog, shell, Menu } = require("electron");
+const { app, BrowserWindow, dialog, shell, Menu, ipcMain } = require("electron");
 const { spawn } = require("node:child_process");
 const net = require("node:net");
 const path = require("node:path");
@@ -14,6 +14,7 @@ const http = require("node:http");
 let backend = null;
 let mainWindow = null;
 let baseUrl = null;
+let dataDirectory = null;
 const logLines = [];
 
 function freePort() {
@@ -60,6 +61,7 @@ async function startBackend() {
   const port = await freePort();
   const dataDir = path.join(app.getPath("userData"), "data");
   fs.mkdirSync(dataDir, { recursive: true });
+  dataDirectory = dataDir;
   const { cmd, args, cwd } = backendCommand(port, dataDir);
   backend = spawn(cmd, args, {
     cwd,
@@ -113,6 +115,19 @@ function createWindow() {
   mainWindow.loadURL(baseUrl);
 }
 
+// "Mot de passe oublié" on the login screen: opens the local reset tool in a console window.
+// Only the local UI may ask, and the tool itself prompts for the account and the new password.
+function openPasswordReset(event) {
+  if (!baseUrl || !event.senderFrame || !event.senderFrame.url.startsWith(baseUrl)) return { ok: false, message: "Refusé." };
+  const tool = path.join(process.resourcesPath, "Reinitialiser-mot-de-passe.cmd");
+  if (process.platform !== "win32" || !app.isPackaged || !fs.existsSync(tool)) {
+    return { ok: false, message: `Dans un terminal : makkadi-backend --data-dir "${dataDirectory}" --reset-password` };
+  }
+  spawn("cmd.exe", ["/d", "/c", "start", '"MAKKADi"', `"${tool}"`, `"${dataDirectory}"`],
+    { windowsVerbatimArguments: true, detached: true, stdio: "ignore" }).unref();
+  return { ok: true };
+}
+
 function stopBackend() {
   if (backend && !backend.killed) {
     if (process.platform === "win32") spawn("taskkill", ["/pid", String(backend.pid), "/t", "/f"], { windowsHide: true });
@@ -126,6 +141,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on("second-instance", () => { if (mainWindow) { if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.focus(); } });
   app.whenReady().then(async () => {
     Menu.setApplicationMenu(null);
+    ipcMain.handle("makkadi:open-password-reset", openPasswordReset);
     try {
       await startBackend();
       createWindow();

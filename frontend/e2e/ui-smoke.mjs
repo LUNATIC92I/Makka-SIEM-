@@ -65,6 +65,39 @@ for (const nav of ["Cartographie", "Threat Intelligence", "Rapports", "Connecteu
   await page.waitForTimeout(700);
   check(!(await body()).includes("Erreur interne"), `page ${nav}`);
 }
+// Password management: administrator reset, own password change, forgotten-password help.
+const PASS2 = "E2e-Changement-2026";
+await page.click("[role=tab]:has-text(\"Utilisateurs et rôles\")");
+await page.waitForSelector("text=Créer un utilisateur");
+if (!(await page.locator("td", { hasText: "e2e-analyste" }).count())) {
+  const form = page.locator(".card", { hasText: "Créer un utilisateur" });
+  await form.locator("input").nth(0).fill("e2e-analyste");
+  await form.locator("input").nth(1).fill("Analyste-E2e-2026");
+  await form.locator("button:has-text(\"Créer\")").click();
+  await page.locator("td", { hasText: "e2e-analyste" }).waitFor();
+}
+await page.locator("tr", { hasText: "e2e-analyste" }).locator("button:has-text(\"Réinitialiser le mot de passe\")").click();
+await page.fill("#pw-new", "Analyste-Reinit-2026"); await page.fill("#pw-confirm", "Analyste-Reinit-2026");
+await page.click("[role=dialog] button:has-text(\"Réinitialiser\")");
+await page.waitForSelector("text=réinitialisé : compte déverrouillé");
+check(true, "réinitialisation du mot de passe par l'administrateur");
+
+const changeOwn = async (from, to) => {
+  await page.click("button:has-text(\"Changer mon mot de passe\")");
+  await page.fill("#pw-current", from); await page.fill("#pw-new", to); await page.fill("#pw-confirm", to);
+  await page.click("[role=dialog] button:has-text(\"Changer le mot de passe\")");
+  await page.waitForSelector("#u");
+};
+await changeOwn(PASS, PASS2);
+check((await body()).includes("Mot de passe modifié"), "changement de son propre mot de passe, reconnexion demandée");
+await page.click("button:has-text(\"Mot de passe oublié ?\")");
+check((await body()).includes("--reset-password"), "aide mot de passe oublié affichée");
+await page.fill("#u", USER); await page.fill("#p", PASS2);
+await page.click("button:has-text(\"Se connecter\")");
+await page.waitForSelector("text=Vue d'ensemble");
+await changeOwn(PASS2, PASS);   // restore, so the script can run again
+check(true, "connexion avec le nouveau mot de passe");
+
 check(pageErrors.length === 0, `aucune erreur JavaScript (${pageErrors.join(" | ")})`);
 await browser.close();
 if (failures.length) { console.error(`${failures.length} échec(s)`); process.exit(1); }

@@ -8,6 +8,22 @@
 | `analyst` | investigations (création, statut, décisions, relance), rapports, ingestion, analyse IA, audit en lecture |
 | `viewer` | consultation des investigations non restreintes et des rapports |
 
+## Mots de passe
+
+* **Changer son mot de passe** : bouton *Changer mon mot de passe* en bas du menu. Le mot de passe actuel est
+  demandé ; toutes vos sessions sont ensuite fermées et vous vous reconnectez avec le nouveau.
+* **Un utilisateur a oublié son mot de passe ou son compte est verrouillé** : un administrateur ouvre
+  *Paramètres, Utilisateurs et rôles* et clique *Réinitialiser le mot de passe* (ou *Déverrouiller*). Le compte est
+  débloqué, ses sessions sont fermées, et l'opération figure au journal d'audit (sans le mot de passe).
+* **Le seul administrateur a oublié son mot de passe** : sur l'écran de connexion, *Mot de passe oublié ?* puis
+  *Ouvrir l'outil de réinitialisation*. Une fenêtre de commande liste les comptes, demande l'identifiant puis le
+  nouveau mot de passe deux fois. Aucune donnée n'est supprimée. L'outil peut aussi être lancé directement :
+  `Reinitialiser-mot-de-passe.cmd` dans le dossier `resources` de l'installation, ou
+  `makkadi-backend.exe --data-dir "%APPDATA%\MAKKADi\data" --reset-password [identifiant]`.
+  Il ne fonctionne que sur le poste qui contient les données.
+
+Règles : 12 caractères minimum, majuscules, minuscules et au moins un chiffre.
+
 ## Parcours type (scénario de référence)
 
 1. **Ingestion** — un connecteur SIEM collecte l'alerte (ou import *Investigations → Importer des événements JSON*,
